@@ -8,7 +8,6 @@ import org.java.utils.http.Method;
 import org.java.utils.http.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,7 +15,6 @@ import java.util.regex.Pattern;
 /**
  * Created by msamoylych on 05.04.2017.
  */
-@Component
 public class FCMPushHttpClientAdapter implements HttpClientAdapter<Push<ApplicationAndroid>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FCMPushHttpClientAdapter.class);
 

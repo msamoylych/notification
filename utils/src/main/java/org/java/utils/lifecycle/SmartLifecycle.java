@@ -18,9 +18,9 @@ public abstract class SmartLifecycle implements org.springframework.context.Smar
         synchronized (lifecycleMonitor) {
             if (!running) {
                 try {
+                    LOGGER.info("{} starting...", name);
                     doStart();
                     running = true;
-                    LOGGER.info("{} started", name);
                 } catch (Throwable th) {
                     throw new LifecycleException("Start " + name + " failed", th);
                 }
@@ -43,9 +43,9 @@ public abstract class SmartLifecycle implements org.springframework.context.Smar
         synchronized (lifecycleMonitor) {
             if (running) {
                 try {
+                    LOGGER.info("{} stopping...", name);
                     doStop();
                     running = false;
-                    LOGGER.info("{} stopped", name);
                 } catch (Throwable th) {
                     throw new LifecycleException("Stop " + name + " failed", th);
                 }

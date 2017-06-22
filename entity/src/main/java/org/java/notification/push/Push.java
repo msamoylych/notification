@@ -25,6 +25,10 @@ public class Push<A extends Application> extends Entity implements Message {
 
     private String icon;
 
+    private Long systemId;
+
+    private String extId;
+
     public Push() {
         this.state = State.NEW;
     }
@@ -91,5 +95,21 @@ public class Push<A extends Application> extends Entity implements Message {
 
     public void icon(String icon) {
         this.icon = icon;
+    }
+
+    public Long systemId() {
+        return systemId;
+    }
+
+    public void systemId(Long systemId) {
+        this.systemId = systemId;
+    }
+
+    public String extId() {
+        return extId;
+    }
+
+    public void extId(String extId) {
+        this.extId = extId;
     }
 }

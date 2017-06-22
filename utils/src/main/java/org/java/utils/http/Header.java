@@ -11,4 +11,6 @@ public final class Header {
     public static final String LAST_MODIFIED = "last-modified";
     public static final String CACHE_CONTROL = "cache-control";
 
+    public static final String X_FORWARDED_FOR = "x-forwarded-for";
+
 }

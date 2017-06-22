@@ -26,6 +26,18 @@ public final class StringUtils {
         return s != null ? s : "";
     }
 
+    public static boolean checkLength(String s, int max) {
+        return checkLength(s, 0, max);
+    }
+
+    public static boolean checkLength(String s, int min, int max) {
+        if (s == null) {
+            return true;
+        }
+        int l = s.length();
+        return l >= min && l <= max;
+    }
+
     public static String repeatWithDelimiter(String str, String delimiter, int count) {
         StringBuilder sb = new StringBuilder(str);
         for (int i = 0; i < count - 1; i++) {

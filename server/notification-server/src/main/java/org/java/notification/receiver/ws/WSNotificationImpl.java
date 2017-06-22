@@ -1,22 +1,20 @@
 package org.java.notification.receiver.ws;
 
-import org.java.notification.push.ApplicationStorage;
-import org.java.notification.push.Push;
-import org.java.notification.push.PushStorage;
-import org.java.notification.push.application.Application;
-import org.java.notification.receiver.ws.model.PushModel;
-import org.java.notification.receiver.ws.model.ResultModel;
-import org.java.notification.user.System;
-import org.java.notification.user.SystemStorage;
-import org.java.utils.StringUtils;
+import org.java.notification.receiver.ReceiverService;
+import org.java.notification.receiver.model.PushModel;
+import org.java.notification.receiver.model.ResultModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import javax.jws.WebService;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.ws.BindingType;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.soap.SOAPBinding;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,48 +28,23 @@ import java.util.List;
 public class WSNotificationImpl implements WSNotification {
     private static final Logger LOGGER = LoggerFactory.getLogger(WSNotification.class);
 
-    private final SystemStorage systemStorage;
-    private final ApplicationStorage applicationStorage;
-    private final PushStorage pushStorage;
+    @Resource
+    private WebServiceContext context;
 
-    public WSNotificationImpl(SystemStorage systemStorage, ApplicationStorage applicationStorage, PushStorage pushStorage) {
-        this.systemStorage = systemStorage;
-        this.applicationStorage = applicationStorage;
-        this.pushStorage = pushStorage;
-    }
+    @Autowired
+    @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
+    private ReceiverService receiverService;
 
     @Override
     public ResultModel send(String code, List<PushModel> pushModels) {
-        System system = checkSystem(code);
-        if (system == null) {
-            return new ResultModel("system-not-found");
-        }
-
-        LOGGER.info("{} message(s) received from {}", pushModels.size(), system.name());
-
-        List<Push> pushes = new ArrayList<>(pushModels.size());
-        List<ResultModel> results = new ArrayList<>(pushModels.size());
-        for (PushModel pushModel : pushModels) {
-            Application application = applicationStorage.application(code, pushModel.os(), pushModel.packageName());
-        }
-        return null;
+        logIP();
+        return receiverService.receive(code, pushModels);
     }
 
-    private System checkSystem(String code) {
-        if (StringUtils.isEmpty(code)) {
-            LOGGER.warn("Code is undefined");
-            return null;
-        }
-
-        System system = systemStorage.system(code);
-        if (system == null) {
-            LOGGER.warn("System with code {} not found", code);
-            return null;
-        } else if (system.locked()) {
-            LOGGER.warn("System with code {} is locked", code);
-            return null;
-        }
-
-        return system;
+    private void logIP() {
+        MessageContext messageContext = context.getMessageContext();
+        HttpServletRequest request = (HttpServletRequest) messageContext.get(MessageContext.SERVLET_REQUEST);
+        String ip = request.getLocalAddr();
+        LOGGER.info("Request from {}", ip);
     }
 }

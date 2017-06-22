@@ -1,7 +1,7 @@
 package org.java.notification.receiver.ws;
 
-import org.java.notification.receiver.ws.model.PushModel;
-import org.java.notification.receiver.ws.model.ResultModel;
+import org.java.notification.receiver.model.PushModel;
+import org.java.notification.receiver.model.ResultModel;
 
 import javax.jws.WebParam;
 import javax.jws.WebResult;

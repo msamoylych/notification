@@ -1,6 +1,8 @@
 package org.java.utils;
 
 import org.java.utils.lifecycle.SmartLifecycle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -12,6 +14,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public final class Scheduler extends SmartLifecycle {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
     private ScheduledThreadPoolExecutor executor;
 
@@ -22,11 +25,10 @@ public final class Scheduler extends SmartLifecycle {
     }
 
     @Override
-    protected void doStop() {
+    protected void doStop() throws Exception {
         executor.shutdown();
-        try {
-            executor.awaitTermination(5, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+        if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+            LOGGER.error("Await termination failed");
         }
     }
 

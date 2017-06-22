@@ -16,10 +16,11 @@ public class Main {
     private static ConfigurableApplicationContext context;
 
     public static void main(String[] args) {
-        LOGGER.info("Start application");
+        LOGGER.info("Application starting...");
         try {
             context = new AnnotationConfigApplicationContext(BASE_PACKAGE);
             Runtime.getRuntime().addShutdownHook(ShutdownHook.INSTANCE);
+            LOGGER.info("Application started");
         } catch (Throwable th) {
             LOGGER.error("Start application error", th);
             System.exit(1);

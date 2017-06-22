@@ -14,7 +14,7 @@ import java.util.Map;
 public class SystemStorage extends PreloadStorage {
 
     private static final String CODE = "SYSTEM";
-    private static final String SELECT = "SELECT code, name, locked FROM SYSTEM";
+    private static final String SELECT = "SELECT id, code, name, locked FROM SYSTEM";
 
     private final Map<String, System> systems = new HashMap<>();
 
@@ -34,6 +34,7 @@ public class SystemStorage extends PreloadStorage {
 
             while (rs.next()) {
                 System system = new System();
+                system.id(rs.getLong());
                 system.code(rs.getString());
                 system.name(rs.getString());
                 system.locked(rs.getYNBoolean());

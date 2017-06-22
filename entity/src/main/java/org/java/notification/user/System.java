@@ -1,9 +1,11 @@
 package org.java.notification.user;
 
+import org.java.notification.Entity;
+
 /**
  * Created by msamoylych on 24.05.2017.
  */
-public class System {
+public class System extends Entity {
 
     private String code;
 

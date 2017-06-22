@@ -7,6 +7,10 @@
         </encoder>
     </appender>
 
+    <logger name="org.springframework.context.annotation.AnnotationConfigApplicationContext" level="WARN"/>
+    <logger name="org.apache.cxf.wsdl.service.factory.ReflectionServiceFactoryBean" level="WARN"/>
+    <logger name="org.apache.cxf.endpoint.ServerImpl" level="WARN"/>
+
     <root level="INFO">
         <appender-ref ref="STDOUT"/>
     </root>

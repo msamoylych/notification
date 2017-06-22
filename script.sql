@@ -3,6 +3,8 @@
 -- TYPE
 
 CREATE TYPE T_NUMBER_20 IS TABLE OF NUMBER(20);
+CREATE TYPE T_VARCHAR2_16 IS TABLE OF VARCHAR2(16);
+CREATE TYPE T_VARCHAR2_36 IS TABLE OF VARCHAR2(36);
 CREATE TYPE T_VARCHAR2_256 IS TABLE OF VARCHAR2(256);
 CREATE TYPE T_VARCHAR2_4000 IS TABLE OF VARCHAR2(4000);
 
@@ -188,15 +190,21 @@ AFTER INSERT OR UPDATE OR DELETE ON SYSTEM_APPLICATION
 CREATE TABLE PUSH (
   ID             NUMBER(20)                                      NOT NULL,
   CREATETIME     TIMESTAMP DEFAULT sys_extract_utc(systimestamp) NOT NULL,
+  SYSTEM_ID      NUMBER(20)                                      NOT NULL,
+  EXT_ID         VARCHAR2(36)                                    NOT NULL,
   APPLICATION_ID NUMBER(20)                                      NOT NULL,
-  TOKEN          VARCHAR2(256)                                   NOT NULL,
+  TOKEN          VARCHAR2(256)                                   NULL,
   TITLE          VARCHAR2(256)                                   NULL,
-  BODY           VARCHAR2(4000)                                  NULL
+  BODY           VARCHAR2(4000)                                  NULL,
+  ICON           VARCHAR2(16)                                    NULL
 );
 
 ALTER TABLE PUSH
   ADD CONSTRAINT PUSH_PK PRIMARY KEY (ID)
   USING INDEX;
+
+CREATE UNIQUE INDEX PUSH_SYSTEM_EXT_I
+  ON PUSH (SYSTEM_ID, EXT_ID);
 
 ALTER TABLE PUSH
   ADD CONSTRAINT PUSH_APPLICATION_FK
@@ -213,25 +221,31 @@ FOR EACH ROW
     FROM dual;
   END;
 
-CREATE FUNCTION F_INSERT_PUSH(application_id NUMBER,
-                              token          VARCHAR2,
-                              title          VARCHAR2,
-                              body           VARCHAR2)
+CREATE OR REPLACE FUNCTION F_INSERT_PUSH(application_id NUMBER,
+                                         token          VARCHAR2,
+                                         title          VARCHAR2,
+                                         body           VARCHAR2,
+                                         icon           VARCHAR2,
+                                         system_id      NUMBER,
+                                         ext_id         VARCHAR2)
   RETURN NUMBER
 AS
   id NUMBER(20);
   BEGIN
-    INSERT INTO PUSH (APPLICATION_ID, TOKEN, TITLE, BODY)
-    VALUES (application_id, token, title, body)
+    INSERT INTO PUSH (APPLICATION_ID, TOKEN, TITLE, BODY, ICON, SYSTEM_ID, EXT_ID)
+    VALUES (application_id, token, title, body, icon, system_id, ext_id)
     RETURNING ID INTO id;
 
     RETURN id;
   END;
 
-CREATE FUNCTION F_INSERT_PUSHES(application_id T_NUMBER_20,
-                                token          T_VARCHAR2_256,
-                                title          T_VARCHAR2_256,
-                                body           T_VARCHAR2_4000)
+CREATE OR REPLACE FUNCTION F_INSERT_PUSHES(application_id T_NUMBER_20,
+                                           token          T_VARCHAR2_256,
+                                           title          T_VARCHAR2_256,
+                                           body           T_VARCHAR2_4000,
+                                           icon           T_VARCHAR2_16,
+                                           system_id      T_NUMBER_20,
+                                           ext_id         T_VARCHAR2_36)
   RETURN T_NUMBER_20
 AS
   id T_NUMBER_20;
@@ -241,7 +255,7 @@ AS
 
     FOR i IN application_id.FIRST .. application_id.LAST
     LOOP
-      id(i) := F_INSERT_PUSH(application_id(i), token(i), title(i), body(i));
+      id(i) := F_INSERT_PUSH(application_id(i), token(i), title(i), body(i), icon(i), system_id(i), ext_id(i));
     END LOOP;
 
     RETURN id;
