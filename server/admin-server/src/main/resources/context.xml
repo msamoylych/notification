@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
+
+    <import resource="classpath*:*-context.xml"/>
+
+    <bean name="sessions" class="Sessions"/>
+
+    <bean name="authenticationService" class="org.java.notification.admin.AuthenticationService">
+        <constructor-arg name="storage" ref="webUserStorage"/>
+        <constructor-arg name="sessions" ref="sessions"/>
+    </bean>
+
+    <bean name="handler" class="org.java.notification.admin.AdminHttpServerHandler">
+        <constructor-arg name="authenticationService" ref="authenticationService"/>
+    </bean>
+
+    <bean name="server" factory-bean="serverFactory" factory-method="createServer">
+        <constructor-arg name="name" value="ADMIN"/>
+        <constructor-arg name="port" value="8080"/>
+        <constructor-arg name="handler" ref="handler"/>
+    </bean>
+
+    <bean class="org.java.notification.server.http.HttpServer">
+        <constructor-arg ref="server"/>
+    </bean>
+
+</beans>

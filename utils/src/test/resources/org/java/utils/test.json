@@ -1,0 +1,23 @@
+{
+  "name1": "value",
+  "name2": 2,
+  "array": [
+    "value1",
+    "value2",
+    "value3"
+  ],
+  "object": {
+    "o1": "v1",
+    "o2": "v2"
+  },
+  "objects": [
+    {
+      "ao11": "av11",
+      "ao12": "av12"
+    },
+    {
+      "ao21": "av21",
+      "ao22": "av22"
+    }
+  ]
+}

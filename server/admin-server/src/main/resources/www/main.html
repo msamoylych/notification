@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Notification</title>
+
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-theme.min.css" rel="stylesheet">
+
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+
+<body>
+
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="/">
+                <img src="/img/logo.png" alt="Logo">
+                <span>Notification</span>
+            </a>
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div class="navbar-collapse collapse">
+            <div id="menu"></div>
+
+            <div id="loginForm" class="navbar-form navbar-right form-inline" style="display: none;">
+                <input id="login" type="text" class="form-control" placeholder="Login">
+                <input id="password" type="password" class="form-control" placeholder="Password">
+                <button id="log_in" class="btn btn-theme">Войти</button>
+            </div>
+
+            <div id="logoutForm" class="navbar-form navbar-right form-inline" style="display: none;">
+                <label id="userName" for="log_out" style="padding-right: 10px;"></label>
+                <button id="log_out" class="btn btn-theme">Выйти</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div id="content">
+
+</div>
+
+<script src="/js/jquery-3.2.1.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/script.js"></script>
+
+<script type="text/javascript">
+    $("#log_in").click(login);
+    $("#log_out").click(logout);
+    login();
+</script>
+
+</body>
+</html>
