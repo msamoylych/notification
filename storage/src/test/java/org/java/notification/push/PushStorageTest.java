@@ -1,7 +1,7 @@
 package org.java.notification.push;
 
 import org.java.notification.push.application.Application;
-import org.java.notification.push.application.ApplicationAndroid;
+import org.java.notification.push.application.FCMApplication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
@@ -26,7 +26,7 @@ public class PushStorageTest extends AbstractTestNGSpringContextTests {
 
     @BeforeClass
     public void beforeClass() {
-        a = new ApplicationAndroid();
+        a = new FCMApplication();
         a.id(1L);
     }
 
@@ -37,14 +37,14 @@ public class PushStorageTest extends AbstractTestNGSpringContextTests {
         push.token("Token");
         push.title("Title");
         push.body("Body");
-        pushStorage.insert(push);
+        pushStorage.save(push);
 
         Assert.assertNotNull(push.id());
     }
 
     @Test
     public void testInsertList() throws Exception {
-        List<Push> pushes = new ArrayList<>();
+        List<Push<?>> pushes = new ArrayList<>();
 
         Push<Application> push1 = new Push<>();
         push1.application(a);
@@ -67,7 +67,7 @@ public class PushStorageTest extends AbstractTestNGSpringContextTests {
         push3.body("Body3");
         pushes.add(push3);
 
-        pushStorage.insert(pushes);
+        pushStorage.save(pushes);
 
         Assert.assertNotNull(push1.id());
         Assert.assertNotNull(push2.id());

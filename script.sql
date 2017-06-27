@@ -221,13 +221,13 @@ FOR EACH ROW
     FROM dual;
   END;
 
-CREATE OR REPLACE FUNCTION F_INSERT_PUSH(application_id NUMBER,
-                                         token          VARCHAR2,
-                                         title          VARCHAR2,
-                                         body           VARCHAR2,
-                                         icon           VARCHAR2,
-                                         system_id      NUMBER,
-                                         ext_id         VARCHAR2)
+CREATE FUNCTION F_INSERT_PUSH(application_id NUMBER,
+                              token          VARCHAR2,
+                              title          VARCHAR2,
+                              body           VARCHAR2,
+                              icon           VARCHAR2,
+                              system_id      NUMBER,
+                              ext_id         VARCHAR2)
   RETURN NUMBER
 AS
   id NUMBER(20);
@@ -239,13 +239,13 @@ AS
     RETURN id;
   END;
 
-CREATE OR REPLACE FUNCTION F_INSERT_PUSHES(application_id T_NUMBER_20,
-                                           token          T_VARCHAR2_256,
-                                           title          T_VARCHAR2_256,
-                                           body           T_VARCHAR2_4000,
-                                           icon           T_VARCHAR2_16,
-                                           system_id      T_NUMBER_20,
-                                           ext_id         T_VARCHAR2_36)
+CREATE FUNCTION F_INSERT_PUSHES(application_id T_NUMBER_20,
+                                token          T_VARCHAR2_256,
+                                title          T_VARCHAR2_256,
+                                body           T_VARCHAR2_4000,
+                                icon           T_VARCHAR2_16,
+                                system_id      T_NUMBER_20,
+                                ext_id         T_VARCHAR2_36)
   RETURN T_NUMBER_20
 AS
   id T_NUMBER_20;

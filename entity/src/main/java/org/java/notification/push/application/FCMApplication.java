@@ -5,7 +5,7 @@ import org.java.notification.push.OS;
 /**
  * Created by msamoylych on 05.05.2017.
  */
-public class ApplicationAndroid extends Application {
+public class FCMApplication extends Application {
 
     private String serverKey;
 

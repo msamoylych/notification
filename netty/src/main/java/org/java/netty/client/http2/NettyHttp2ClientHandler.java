@@ -72,7 +72,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
             Stream stream;
             if (endOfStream) {
                 stream = streams.remove(streamId);
-                adapter.handleResponse(headers, null, stream.message);
+                adapter.handleResponse(stream.message, headers, null);
             } else {
                 stream = streams.get(streamId);
                 stream.headers = headers;
@@ -87,7 +87,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
             if (endOfStream) {
                 Stream stream = streams.remove(streamId);
-                adapter.handleResponse(stream.headers, response, stream.message);
+                adapter.handleResponse(stream.message, stream.headers, response);
             }
 
             return bytesProcessed;

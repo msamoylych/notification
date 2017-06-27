@@ -1,24 +1,29 @@
 package org.java.notification.sender.push.fcm;
 
+import org.java.notification.client.ClientFactory;
 import org.java.notification.client.http.HttpClientAdapter;
 import org.java.notification.push.Push;
-import org.java.notification.push.application.ApplicationAndroid;
+import org.java.notification.push.application.FCMApplication;
+import org.java.notification.sender.AbstractSender;
 import org.java.utils.Json;
+import org.java.utils.http.ContentType;
+import org.java.utils.http.Header;
 import org.java.utils.http.Method;
 import org.java.utils.http.Status;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Created by msamoylych on 05.04.2017.
+ * Created by msamoylych on 27.06.2017.
  */
-public class FCMPushHttpClientAdapter implements HttpClientAdapter<Push<ApplicationAndroid>> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(FCMPushHttpClientAdapter.class);
+@Component
+public class FCMSender extends AbstractSender<Push<FCMApplication>> implements HttpClientAdapter<Push<FCMApplication>> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FCMSender.class);
 
-    private static final String NAME = "FCM";
     private static final String HOST = "fcm-http.googleapis.com";
     private static final int PORT = 443;
     private static final String PATH = "/fcm/send";
@@ -34,9 +39,8 @@ public class FCMPushHttpClientAdapter implements HttpClientAdapter<Push<Applicat
     private static final String INVALID_REGISTRATION = "InvalidRegistration";
     private static final String MISMATCH_SENDER_ID = "MismatchSenderId";
 
-    @Override
-    public String name() {
-        return NAME;
+    public FCMSender(ClientFactory clientFactory) {
+        super(clientFactory);
     }
 
     @Override
@@ -55,23 +59,23 @@ public class FCMPushHttpClientAdapter implements HttpClientAdapter<Push<Applicat
     }
 
     @Override
-    public Method method() {
-        return Method.POST;
-    }
-
-    @Override
     public String path() {
         return PATH;
     }
 
     @Override
-    public void headers(Headers headers, Push<ApplicationAndroid> msg) {
-        headers.set(Headers.CONTENT_TYPE, Headers.JSON);
+    public Method method() {
+        return Method.POST;
+    }
+
+    @Override
+    public void headers(Headers headers, Push<FCMApplication> msg) {
+        headers.set(Header.CONTENT_TYPE, ContentType.APPLICATION_JSON);
         headers.set(AUTHORIZATION, KEY + msg.application().serverKey());
     }
 
     @Override
-    public String content(Push<ApplicationAndroid> msg) {
+    public String content(Push<FCMApplication> msg) {
         return Json.start()
                 .add("to", msg.device().token())
                 .startObject("notification")
@@ -83,7 +87,7 @@ public class FCMPushHttpClientAdapter implements HttpClientAdapter<Push<Applicat
     }
 
     @Override
-    public void handleResponse(Status status, Headers headers, String response, Push<ApplicationAndroid> msg) {
+    public void handleResponse(Push<FCMApplication> msg, Status status, Headers headers, String response) {
         switch (status) {
             case OK:
                 Matcher matcher = RESPONSE_PATTERN.matcher(response);

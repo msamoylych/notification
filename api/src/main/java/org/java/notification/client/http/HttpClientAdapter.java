@@ -8,31 +8,24 @@ import org.java.utils.http.Status;
 /**
  * Created by msamoylych on 05.04.2017.
  */
-public interface HttpClientAdapter<M extends Message> extends ClientAdapter<M> {
+public interface HttpClientAdapter<M extends Message> extends ClientAdapter {
 
-    boolean http2();
-
-    String host();
-
-    int port();
-
-    Method method();
+    default boolean http2() {
+        return false;
+    }
 
     String path();
+
+    Method method();
 
     void headers(Headers headers, M msg);
 
     String content(M msg);
 
-    void handleResponse(Status status, Headers headers, String response, M msg);
+    void handleResponse(M msg, Status status, Headers headers, String response);
 
     interface Headers {
-        String HOST = "Host";
-
-        String CONTENT_LENGTH = "Content-Length";
-        String CONTENT_TYPE = "Content-Type";
-        String JSON = "application/json";
-
         void set(String name, String value);
+        String get(String name);
     }
 }

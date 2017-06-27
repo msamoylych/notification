@@ -101,7 +101,7 @@ public class ReceiverService {
         }
 
         try {
-            pushStorage.insert(pushes);
+            pushStorage.save(pushes);
         } catch (StorageException ex) {
             if (ex.isConstraintViolation()) {
                 LOGGER.error(ex.getMessage(), ex);

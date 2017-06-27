@@ -7,8 +7,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.java.netty.Netty;
 import org.java.notification.Message;
 import org.java.notification.client.Client;
+import org.java.notification.client.ClientAdapter;
 import org.java.notification.client.SendException;
-import org.java.notification.client.http.HttpClientAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,22 +18,19 @@ import org.slf4j.LoggerFactory;
 public abstract class NettyClient<M extends Message> implements Client<M> {
     protected static final Logger LOGGER = LoggerFactory.getLogger(NettyClient.class);
 
-    protected final String name;
+    protected final ClientAdapter adapter;
     protected final Bootstrap bootstrap;
 
     protected volatile Channel channel;
 
-    public NettyClient(HttpClientAdapter<M> adapter) {
-        this.name = adapter.name();
+    public NettyClient(ClientAdapter adapter) {
+        this.adapter = adapter;
 
-        String host = adapter.host();
-        int port = adapter.port();
-
-        LOGGER.info("Init <{}> ({}:{})", name, host, port);
+        LOGGER.info("Init <{}> ({}:{})", adapter.getClass().getSimpleName(), adapter.host(), adapter.port());
 
         bootstrap = new Bootstrap()
                 .group(Netty.CLIENT())
-                .remoteAddress(host, port)
+                .remoteAddress(adapter.host(), adapter.port())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)
                 .option(ChannelOption.SO_KEEPALIVE, true);
@@ -43,11 +40,11 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
         try {
             channel().writeAndFlush(msg).addListener(future -> {
                 if (future.cause() != null) {
-                    LOGGER.error("Send error ({})", name, future.cause());
+                    LOGGER.error("Send error ({})", adapter.getClass().getSimpleName(), future.cause());
                 }
             });
         } catch (Throwable th) {
-            LOGGER.error("Send error ({})", name, th);
+            LOGGER.error("Send error ({})", adapter.getClass().getSimpleName(), th);
             throw new SendException();
         }
     }

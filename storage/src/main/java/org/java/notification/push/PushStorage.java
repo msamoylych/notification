@@ -18,7 +18,7 @@ public class PushStorage extends Storage {
     private static final String INSERT_PUSH = "{? = call F_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?)}";
     private static final String INSERT_PUSHES = "{? = call F_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?)}";
 
-    public void insert(Push<?> push) throws StorageException {
+    public void save(Push<?> push) throws StorageException {
         withCallableStatement(INSERT_PUSH, st -> {
             st.registerOutParameter(Types.NUMERIC);
             st.setLong(push.application().id());
@@ -31,12 +31,12 @@ public class PushStorage extends Storage {
         }, st -> push.id(st.getLong()));
     }
 
-    public void insert(List<Push<?>> pushes) throws StorageException {
+    public void save(List<Push<?>> pushes) throws StorageException {
         if (pushes.isEmpty()) {
             return;
         }
         if (pushes.size() == 1) {
-            insert(pushes.get(0));
+            save(pushes.get(0));
             return;
         }
 

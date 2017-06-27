@@ -6,6 +6,7 @@ package org.java.utils.http;
 public final class Header {
 
     public static final String CONTENT_TYPE = "content-type";
+    public static final String CONTENT_LENGTH = "content-length";
 
     public static final String DATE = "date";
     public static final String LAST_MODIFIED = "last-modified";

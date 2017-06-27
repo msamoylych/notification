@@ -35,9 +35,9 @@ class NettyHttp2ClientAdapter<M extends Message> {
         return adapter.content(msg);
     }
 
-    void handleResponse(Http2Headers headers, String response, M msg) {
+    void handleResponse(M msg, Http2Headers headers, String response) {
         HttpResponseStatus status = HttpResponseStatus.parseLine(headers.status());
-        adapter.handleResponse(Status.status(status.code()), new NettyHttp2ClientHeaders(headers), response, msg);
+        adapter.handleResponse(msg, Status.status(status.code()), new NettyHttp2ClientHeaders(headers), response);
     }
 
     private CharSequence method() {
@@ -61,7 +61,12 @@ class NettyHttp2ClientAdapter<M extends Message> {
 
         @Override
         public void set(String name, String value) {
-            headers.set(name.toLowerCase(), value);
+            headers.set(name, value);
+        }
+
+        @Override
+        public String get(String name) {
+            return headers.get(name).toString();
         }
     }
 }

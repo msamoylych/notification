@@ -89,17 +89,17 @@ public class ApplicationStorage extends PreloadStorage {
                             OS os = OS.valueOf(rs.getString(3));
                             switch (os) {
                                 case ANDROID:
-                                    application = new ApplicationAndroid();
-                                    ((ApplicationAndroid) application).serverKey(rs.getString(4));
+                                    application = new FCMApplication();
+                                    ((FCMApplication) application).serverKey(rs.getString(4));
                                     break;
                                 case IOS:
-                                    application = new ApplicationIOS();
+                                    application = new APNsApplication();
                                     break;
                                 case WINDOWS:
-                                    application = new ApplicationWindows();
+                                    application = new WNSApplication();
                                     break;
                                 case WINDOWS_PHONE:
-                                    application = new ApplicationWindowsPhone();
+                                    application = new MPNSApplication();
                                     break;
                                 default:
                                     throw new IllegalStateException("Unknown OS: " + os);

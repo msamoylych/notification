@@ -46,10 +46,10 @@ public class NettyHttpClient<M extends Message> extends NettyClient<M> {
                 return channel;
             }
 
-            LOGGER.info("Connecting ({})", name);
+            LOGGER.info("Connecting ({})", adapter.getClass().getSimpleName());
             ChannelFuture connect = bootstrap.connect();
             if (connect.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS) && connect.isSuccess()) {
-                LOGGER.info("Connected ({})", name);
+                LOGGER.info("Connected ({})", adapter.getClass().getSimpleName());
 
                 final Channel ch = connect.channel();
                 channel = ch;

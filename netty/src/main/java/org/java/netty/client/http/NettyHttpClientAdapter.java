@@ -6,6 +6,7 @@ import io.netty.handler.codec.http.*;
 import org.java.notification.Message;
 import org.java.notification.client.http.HttpClientAdapter;
 import org.java.notification.client.http.HttpClientAdapter.Headers;
+import org.java.utils.http.Header;
 
 import java.nio.charset.StandardCharsets;
 
@@ -29,7 +30,7 @@ class NettyHttpClientAdapter<M extends Message> {
 
         HttpHeaders headers = request.headers();
         adapter.headers(new NettyHttpClientHeaders(headers), msg);
-        headers.add(Headers.CONTENT_LENGTH, content.capacity());
+        headers.add(Header.CONTENT_LENGTH, content.capacity());
 
         return request;
     }
@@ -55,6 +56,11 @@ class NettyHttpClientAdapter<M extends Message> {
         @Override
         public void set(String name, String value) {
             headers.add(name, value);
+        }
+
+        @Override
+        public String get(String name) {
+            return headers.get(name);
         }
     }
 }

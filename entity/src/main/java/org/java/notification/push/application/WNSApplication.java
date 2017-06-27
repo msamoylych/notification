@@ -5,7 +5,7 @@ import org.java.notification.push.OS;
 /**
  * Created by msamoylych on 30.05.2017.
  */
-public class ApplicationWindows extends Application {
+public class WNSApplication extends Application {
 
     @Override
     public OS os() {
