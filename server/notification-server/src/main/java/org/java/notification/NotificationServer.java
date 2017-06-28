@@ -1,6 +1,8 @@
 package org.java.notification;
 
+import org.java.notification.client.ClientFactory;
 import org.java.notification.receiver.Receiver;
+import org.java.notification.sender.Sender;
 import org.java.notification.setting.ReceiverSetting;
 import org.java.notification.setting.ReceiverStorage;
 import org.java.notification.storage.PreloadStorageController;
@@ -40,7 +42,15 @@ public class NotificationServer extends SmartLifecycle {
 
         preloadStorageController.init();
 
+        startSenders();
         startReceivers(hostName);
+    }
+
+    private void startSenders() {
+        ClientFactory clientFactory = BeanUtils.bean(ClientFactory.class);
+        for (Sender sender : BeanUtils.beansOfType(Sender.class)) {
+            sender.init(clientFactory);
+        }
     }
 
     private void startReceivers(String server) throws StorageException {

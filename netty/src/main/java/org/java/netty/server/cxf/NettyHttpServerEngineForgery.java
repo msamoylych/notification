@@ -7,6 +7,7 @@ import org.apache.cxf.transport.http.netty.server.NettyHttpServerEngine;
 import org.apache.cxf.transport.http.netty.server.NettyHttpServerEngineFactory;
 import org.apache.cxf.transport.http.netty.server.ThreadingParameters;
 import org.java.netty.Netty;
+import org.java.utils.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
@@ -38,9 +39,10 @@ public class NettyHttpServerEngineForgery implements InitializingBean {
 
         @Override
         public NettyHttpServerEngine createNettyHttpServerEngine(String host, int port, String protocol) throws IOException {
+            Netty netty = BeanUtils.bean(Netty.class);
             NettyHttpServerEngine engine = new NettyHttpServerEngine(host, port);
-            engine.setBossGroup(Netty.ACCEPTOR());
-            engine.setWorkerGroup(Netty.SERVER());
+            engine.setBossGroup(netty.acceptor());
+            engine.setWorkerGroup(netty.server());
             engineFactory.setEnginesList(Collections.singletonList(engine));
             return engine;
         }

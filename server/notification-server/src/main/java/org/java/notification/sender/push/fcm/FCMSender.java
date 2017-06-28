@@ -1,6 +1,5 @@
 package org.java.notification.sender.push.fcm;
 
-import org.java.notification.client.ClientFactory;
 import org.java.notification.client.http.HttpClientAdapter;
 import org.java.notification.push.Push;
 import org.java.notification.push.application.FCMApplication;
@@ -24,11 +23,11 @@ import java.util.regex.Pattern;
 public class FCMSender extends AbstractSender<Push<FCMApplication>> implements HttpClientAdapter<Push<FCMApplication>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FCMSender.class);
 
-    private static final String HOST = "fcm-http.googleapis.com";
+    private static final String HOST = "fcm.googleapis.com";
     private static final int PORT = 443;
     private static final String PATH = "/fcm/send";
 
-    private static final String AUTHORIZATION = "Authorization";
+    private static final String AUTHORIZATION = "authorization";
     private static final String KEY = "key=";
 
     private static final Pattern RESPONSE_PATTERN = Pattern.compile("(\"message_id\":\"(?<messageId>.+?)\"|\"error\":\"(?<error>\\w+?)\")");
@@ -39,15 +38,6 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     private static final String INVALID_REGISTRATION = "InvalidRegistration";
     private static final String MISMATCH_SENDER_ID = "MismatchSenderId";
 
-    public FCMSender(ClientFactory clientFactory) {
-        super(clientFactory);
-    }
-
-    @Override
-    public boolean http2() {
-        return true;
-    }
-
     @Override
     public String host() {
         return HOST;
@@ -56,6 +46,11 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     @Override
     public int port() {
         return PORT;
+    }
+
+    @Override
+    public boolean http2() {
+        return true;
     }
 
     @Override
@@ -76,8 +71,9 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
 
     @Override
     public String content(Push<FCMApplication> msg) {
-        return Json.start()
-                .add("to", msg.device().token())
+        return Json
+                .start()
+                .add("to", msg.token())
                 .startObject("notification")
                 .add("title", msg.title())
                 .add("body", msg.body())
@@ -87,10 +83,11 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     }
 
     @Override
-    public void handleResponse(Push<FCMApplication> msg, Status status, Headers headers, String response) {
+    public void handleResponse(Push<FCMApplication> msg, Status status, Headers headers, String content) {
+        LOGGER.info(content);
         switch (status) {
             case OK:
-                Matcher matcher = RESPONSE_PATTERN.matcher(response);
+                Matcher matcher = RESPONSE_PATTERN.matcher(content);
                 if (matcher.find()) {
                     String messageId = matcher.group(MESSAGE_ID);
                     if (messageId != null) {
@@ -118,6 +115,7 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                 LOGGER.error("Invalid authentication key");
                 break;
             default:
+                LOGGER.info(content);
         }
     }
 }

@@ -12,22 +12,22 @@ import org.springframework.stereotype.Component;
 @Component
 public class Netty extends SmartLifecycle {
 
-    private static EventLoopGroup ACCEPTOR;
-    private static EventLoopGroup SERVER;
-    private static EventLoopGroup CLIENT;
+    private EventLoopGroup acceptor;
+    private EventLoopGroup server;
+    private EventLoopGroup client;
 
     @Override
     protected void doStart() {
-        ACCEPTOR = new NioEventLoopGroup(0, new ThreadFactory("acceptor"));
-        SERVER = new NioEventLoopGroup(0, new ThreadFactory("server"));
-        CLIENT = new NioEventLoopGroup(0, new ThreadFactory("client"));
+        acceptor = new NioEventLoopGroup(0, new ThreadFactory("acceptor"));
+        server = new NioEventLoopGroup(0, new ThreadFactory("server"));
+        client = new NioEventLoopGroup(0, new ThreadFactory("client"));
     }
 
     @Override
     protected void doStop() {
-        ACCEPTOR.shutdownGracefully();
-        SERVER.shutdownGracefully();
-        CLIENT.shutdownGracefully();
+        acceptor.shutdownGracefully();
+        server.shutdownGracefully();
+        client.shutdownGracefully();
     }
 
     @Override
@@ -35,16 +35,16 @@ public class Netty extends SmartLifecycle {
         return 0;
     }
 
-    public static EventLoopGroup ACCEPTOR() {
-        return ACCEPTOR;
+    public EventLoopGroup acceptor() {
+        return acceptor;
     }
 
-    public static EventLoopGroup SERVER() {
-        return SERVER;
+    public EventLoopGroup server() {
+        return server;
     }
 
-    public static EventLoopGroup CLIENT() {
-        return CLIENT;
+    public EventLoopGroup client() {
+        return client;
     }
 
     private static class ThreadFactory extends DefaultThreadFactory {

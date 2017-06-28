@@ -31,6 +31,9 @@ public class Json {
         }
 
         public JsonBuilder add(String name, String value) {
+            if (value == null) {
+                return this;
+            }
             if (addComma) {
                 builder.append(COMMA);
             }
@@ -40,6 +43,9 @@ public class Json {
         }
 
         public JsonBuilder add(String name, Number value) {
+            if (value == null) {
+                return this;
+            }
             if (addComma) {
                 builder.append(COMMA);
             }

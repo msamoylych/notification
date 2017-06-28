@@ -9,6 +9,7 @@ import org.java.notification.Message;
 import org.java.notification.client.Client;
 import org.java.notification.client.ClientAdapter;
 import org.java.notification.client.SendException;
+import org.java.utils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,8 +29,10 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
 
         LOGGER.info("Init <{}> ({}:{})", adapter.getClass().getSimpleName(), adapter.host(), adapter.port());
 
+        Netty netty = BeanUtils.bean(Netty.class);
+
         bootstrap = new Bootstrap()
-                .group(Netty.CLIENT())
+                .group(netty.client())
                 .remoteAddress(adapter.host(), adapter.port())
                 .channel(NioSocketChannel.class)
                 .option(ChannelOption.TCP_NODELAY, true)

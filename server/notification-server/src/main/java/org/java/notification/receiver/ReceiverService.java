@@ -79,7 +79,7 @@ public class ReceiverService {
                 continue;
             }
 
-            Application application = applicationStorage.application(systemCode, pushModel.os, pushModel.packageName);
+            Application application = applicationStorage.application(systemCode, pushModel.pns, pushModel.packageName);
             if (application == null) {
                 LOGGER.error("PushModel {}: application not found", pushModel.id);
                 result.error = "application-not-found";
@@ -88,6 +88,8 @@ public class ReceiverService {
 
             Push push = new Push();
             pushes.add(push);
+            push.system(system);
+            push.extId(pushModel.id);
             push.application(application);
 
             push.token(pushModel.token);
@@ -95,9 +97,6 @@ public class ReceiverService {
             push.title(pushModel.title);
             push.body(pushModel.body);
             push.icon(pushModel.icon);
-
-            push.systemId(system.id());
-            push.extId(pushModel.id);
         }
 
         try {
@@ -133,23 +132,23 @@ public class ReceiverService {
             return false;
         }
         if (!StringUtils.checkLength(pushModel.id, 36)) {
-            LOGGER.error("PushModel {}: id length more than 36 characters", pushModel.id);
+            LOGGER.error("PushModel <{}>: id length more than 36 characters", pushModel.id);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.token, 256)) {
-            LOGGER.error("PushModel {}: token length more than 256 characters", pushModel.id);
+            LOGGER.error("PushModel <{}>: token length more than 256 characters", pushModel.id);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.title, 256)) {
-            LOGGER.error("PushModel {}: title length more than 256 characters", pushModel.id);
+            LOGGER.error("PushModel <{}>: title length more than 256 characters", pushModel.id);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.body, 4000)) {
-            LOGGER.error("PushModel {}: body length more than 4000 characters", pushModel.id);
+            LOGGER.error("PushModel <{}>: body length more than 4000 characters", pushModel.id);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.icon, 16)) {
-            LOGGER.error("PushModel {}: icon length more than 16 characters", pushModel.id);
+            LOGGER.error("PushModel <{}>: icon length more than 16 characters", pushModel.id);
             return false;
         }
         return true;

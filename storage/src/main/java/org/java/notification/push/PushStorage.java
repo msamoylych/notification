@@ -26,7 +26,7 @@ public class PushStorage extends Storage {
             st.setString(push.title());
             st.setString(push.body());
             st.setString(push.icon());
-            st.setLong(push.systemId());
+            st.setLong(push.system().id());
             st.setString(push.extId());
         }, st -> push.id(st.getLong()));
     }
@@ -57,7 +57,7 @@ public class PushStorage extends Storage {
                 titles[i] = push.title();
                 bodies[i] = push.body();
                 icons[i] = push.icon();
-                systemIds[i] = push.systemId();
+                systemIds[i] = push.system().id();
                 extIds[i] = push.extId();
                 i++;
             }

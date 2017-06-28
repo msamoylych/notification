@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 04.04.2017.
  */
 public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
-    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.DEBUG);
+    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.INFO);
 
     private ChannelPromise configure;
 

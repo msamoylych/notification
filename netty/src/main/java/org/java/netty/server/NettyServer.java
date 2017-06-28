@@ -9,6 +9,7 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.java.netty.Netty;
 import org.java.notification.server.Server;
+import org.java.utils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,8 +30,10 @@ public abstract class NettyServer implements Server {
 
         LOGGER.info("Init <{}> ({})", name, port);
 
+        Netty netty = BeanUtils.bean(Netty.class);
+
         bootstrap = new ServerBootstrap()
-                .group(Netty.ACCEPTOR(), Netty.SERVER())
+                .group(netty.acceptor(), netty.server())
                 .localAddress(port)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 1024)

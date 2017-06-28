@@ -1,6 +1,6 @@
 package org.java.notification.receiver.model;
 
-import org.java.notification.push.OS;
+import org.java.notification.push.PNS;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -15,7 +15,7 @@ public class PushModel {
     public String id;
 
     @XmlElement
-    public OS os;
+    public PNS pns;
 
     @XmlElement(name = "package")
     public String packageName;

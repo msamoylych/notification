@@ -12,7 +12,7 @@ public class StorageException extends Exception {
     }
 
     public StorageException(String sql, Throwable cause) {
-        super(sql, cause);
+        super("SQL: " + sql, cause);
     }
 
     public boolean isConstraintViolation() {

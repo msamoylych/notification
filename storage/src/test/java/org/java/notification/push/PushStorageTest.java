@@ -26,7 +26,7 @@ public class PushStorageTest extends AbstractTestNGSpringContextTests {
 
     @BeforeClass
     public void beforeClass() {
-        a = new FCMApplication();
+        a = new FCMApplication("");
         a.id(1L);
     }
 

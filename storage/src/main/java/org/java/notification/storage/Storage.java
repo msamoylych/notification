@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.util.Objects;
 
 /**
  * Created by msamoylych on 06.06.2017.
@@ -50,8 +51,6 @@ public abstract class Storage {
     }
 
     protected <R> R withPreparedStatement(String sql, Consumer<PreparedStatementWrapper> prepare, Function<R> parse) throws StorageException {
-        assert dataSource != null;
-
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement st = connection.prepareStatement(sql)) {
                 if (prepare != null) {
@@ -72,10 +71,7 @@ public abstract class Storage {
         }
     }
 
-    protected void withCallableStatement(String sql, Consumer<CallableStatementWrapper> prepare, Consumer<CallableStatementWrapper> parse)
-            throws StorageException {
-        assert dataSource != null;
-
+    protected void withCallableStatement(String sql, Consumer<CallableStatementWrapper> prepare, Consumer<CallableStatementWrapper> parse) throws StorageException {
         try (Connection connection = dataSource.getConnection()) {
             try (CallableStatement st = connection.prepareCall(sql)) {
                 CallableStatementWrapper<CallableStatement> wrapper = new CallableStatementWrapper<>(st);
@@ -124,14 +120,6 @@ public abstract class Storage {
             statement.setString(++idx, x);
         }
 
-        public void setDate(Date x) throws SQLException {
-            statement.setDate(++idx, x);
-        }
-
-        public void setTime(Time x) throws SQLException {
-            statement.setTime(++idx, x);
-        }
-
         public void setTimestamp(Timestamp x) throws SQLException {
             statement.setTimestamp(++idx, x);
         }
@@ -139,30 +127,6 @@ public abstract class Storage {
         public void setArray(String typeName, Object[] elements) throws SQLException {
             Array array = ((OracleConnection) statement.getConnection()).createOracleArray(typeName, elements);
             statement.setArray(++idx, array);
-        }
-
-        public void setObject(Object x) throws SQLException {
-            statement.setObject(++idx, x);
-        }
-
-        public void addBatch() throws SQLException {
-            statement.addBatch();
-        }
-
-        public boolean execute() throws SQLException {
-            return statement.execute();
-        }
-
-        public int executeUpdate() throws SQLException {
-            return statement.executeUpdate();
-        }
-
-        public int[] executeBatch() throws SQLException {
-            return statement.executeBatch();
-        }
-
-        public ResultSet executeQuery() throws SQLException {
-            return statement.executeQuery();
         }
     }
 
@@ -202,10 +166,6 @@ public abstract class Storage {
             return resultSet.next();
         }
 
-        public short getShort() throws SQLException {
-            return resultSet.getShort(++idx);
-        }
-
         public int getInt() throws SQLException {
             return resultSet.getInt(++idx);
         }
@@ -218,28 +178,16 @@ public abstract class Storage {
             return resultSet.getString(++idx);
         }
 
-        public Date getDate() throws SQLException {
-            return resultSet.getDate(++idx);
-        }
-
-        public Time getTime() throws SQLException {
-            return resultSet.getTime(++idx);
+        public String getString(int columnIndex) throws SQLException {
+            return resultSet.getString(columnIndex);
         }
 
         public Timestamp getTimestamp() throws SQLException {
             return resultSet.getTimestamp(++idx);
         }
 
-        public boolean getBoolean() throws SQLException {
-            return resultSet.getBoolean(++idx);
-        }
-
         public boolean getYNBoolean() throws SQLException {
-            return "Y".equals(resultSet.getString(++idx));
-        }
-
-        public Object getObject() throws SQLException {
-            return resultSet.getObject(++idx);
+            return Objects.equals(resultSet.getString(++idx), "Y");
         }
     }
 }

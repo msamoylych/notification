@@ -3,34 +3,43 @@ package org.java.notification.push;
 import org.java.notification.Entity;
 import org.java.notification.Message;
 import org.java.notification.push.application.Application;
+import org.java.notification.user.System;
 
 /**
  * Created by msamoylych on 31.03.2017.
  */
 public class Push<A extends Application> extends Entity implements Message {
 
-    private A application;
-
-    private Device device;
-
-    private State state;
-
-    private String messageId;
-
-    private String token;
-
-    private String title;
-
-    private String body;
-
-    private String icon;
-
-    private Long systemId;
-
+    private System system;
     private String extId;
+    private A application;
+    private Device device;
+    private State state;
+    private String messageId;
+    private String token;
+    private String title;
+    private String body;
+    private String icon;
+    private String pnsId;
 
     public Push() {
         this.state = State.NEW;
+    }
+
+    public System system() {
+        return system;
+    }
+
+    public void system(System system) {
+        this.system = system;
+    }
+
+    public String extId() {
+        return extId;
+    }
+
+    public void extId(String extId) {
+        this.extId = extId;
     }
 
     public A application() {
@@ -97,19 +106,11 @@ public class Push<A extends Application> extends Entity implements Message {
         this.icon = icon;
     }
 
-    public Long systemId() {
-        return systemId;
+    public String pnsId() {
+        return pnsId;
     }
 
-    public void systemId(Long systemId) {
-        this.systemId = systemId;
-    }
-
-    public String extId() {
-        return extId;
-    }
-
-    public void extId(String extId) {
-        this.extId = extId;
+    public void pnsId(String pnsId) {
+        this.pnsId = pnsId;
     }
 }
