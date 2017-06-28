@@ -184,7 +184,9 @@ CREATE TABLE PUSH (
   TITLE          VARCHAR2(256)                                   NULL,
   BODY           VARCHAR2(4000)                                  NULL,
   ICON           VARCHAR2(16)                                    NULL,
-  PNS_ID         VARCHAR2(36)                                    NULL
+  STATE          VARCHAR2(8)                                     NOT NULL,
+  PNS_ID         VARCHAR2(36)                                    NULL,
+  PNS_ERROR      VARCHAR2(32)                                    NULL
 );
 
 ALTER TABLE PUSH

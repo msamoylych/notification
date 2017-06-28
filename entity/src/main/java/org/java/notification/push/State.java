@@ -5,7 +5,7 @@ package org.java.notification.push;
  */
 public enum State {
     NEW,
-    FAIL,
+    FAILED,
     SENT,
     RECEIVED,
     READ

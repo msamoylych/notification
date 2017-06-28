@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 04.04.2017.
  */
 public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
-    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.INFO);
+    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.DEBUG);
 
     private ChannelPromise configure;
 
@@ -80,12 +80,13 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
                         synchronized (bootstrap) {
                             channel = null;
                         }
+                        LOGGER.info("Disconnected ({})", adapter.getClass().getSimpleName());
                     });
                     channel = ch;
                     return ch;
                 } else {
                     ch.close();
-                    throw new NettyException("Wait setting timeout");
+                    throw new NettyException("Wait settings timeout");
                 }
             } else {
                 if (connect.cause() != null) {

@@ -21,9 +21,10 @@ public class Push<A extends Application> extends Entity implements Message {
     private String body;
     private String icon;
     private String pnsId;
+    private String pnsError;
 
     public Push() {
-        this.state = State.NEW;
+        state = State.NEW;
     }
 
     public System system() {
@@ -112,5 +113,13 @@ public class Push<A extends Application> extends Entity implements Message {
 
     public void pnsId(String pnsId) {
         this.pnsId = pnsId;
+    }
+
+    public String pnsError() {
+        return pnsError;
+    }
+
+    public void pnsError(String pnsError) {
+        this.pnsError = pnsError;
     }
 }

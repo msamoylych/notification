@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
  * Created by msamoylych on 04.04.2017.
  */
 public abstract class NettyClient<M extends Message> implements Client<M> {
-    protected static final Logger LOGGER = LoggerFactory.getLogger(NettyClient.class);
+    protected Logger LOGGER;
 
     protected final ClientAdapter adapter;
     protected final Bootstrap bootstrap;
@@ -27,7 +27,7 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
     public NettyClient(ClientAdapter adapter) {
         this.adapter = adapter;
 
-        LOGGER.info("Init <{}> ({}:{})", adapter.getClass().getSimpleName(), adapter.host(), adapter.port());
+        LOGGER = LoggerFactory.getLogger(adapter.getClass());
 
         Netty netty = BeanUtils.bean(Netty.class);
 

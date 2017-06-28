@@ -2,8 +2,11 @@ package org.java.notification.sender.push.fcm;
 
 import org.java.notification.client.http.HttpClientAdapter;
 import org.java.notification.push.Push;
+import org.java.notification.push.PushStorage;
+import org.java.notification.push.State;
 import org.java.notification.push.application.FCMApplication;
 import org.java.notification.sender.AbstractSender;
+import org.java.notification.storage.StorageException;
 import org.java.utils.Json;
 import org.java.utils.http.ContentType;
 import org.java.utils.http.Header;
@@ -34,9 +37,11 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     private static final String MESSAGE_ID = "messageId";
     private static final String ERROR = "error";
 
-    private static final String NOT_REGISTERED = "NotRegistered";
-    private static final String INVALID_REGISTRATION = "InvalidRegistration";
-    private static final String MISMATCH_SENDER_ID = "MismatchSenderId";
+    private final PushStorage pushStorage;
+
+    public FCMSender(PushStorage pushStorage) {
+        this.pushStorage = pushStorage;
+    }
 
     @Override
     public String host() {
@@ -70,52 +75,57 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     }
 
     @Override
-    public String content(Push<FCMApplication> msg) {
+    public String content(Push<FCMApplication> push) {
         return Json
                 .start()
-                .add("to", msg.token())
+                .add("to", push.token())
                 .startObject("notification")
-                .add("title", msg.title())
-                .add("body", msg.body())
-                .add("icon", msg.icon())
+                .add("title", push.title())
+                .add("body", push.body())
+                .add("icon", push.icon())
                 .endObject()
                 .end();
     }
 
     @Override
-    public void handleResponse(Push<FCMApplication> msg, Status status, Headers headers, String content) {
-        LOGGER.info(content);
+    public void handleResponse(Push<FCMApplication> push, Status status, Headers headers, String content) {
+        boolean success = false;
         switch (status) {
             case OK:
                 Matcher matcher = RESPONSE_PATTERN.matcher(content);
                 if (matcher.find()) {
                     String messageId = matcher.group(MESSAGE_ID);
                     if (messageId != null) {
-                        LOGGER.info(messageId);
+                        push.pnsId(messageId);
+                        success = true;
                     } else {
                         String error = matcher.group(ERROR);
-                        switch (error) {
-                            case MISMATCH_SENDER_ID:
-                                LOGGER.error("Invalid key");
-                                break;
-                            case NOT_REGISTERED:
-                            case INVALID_REGISTRATION:
-                                LOGGER.error("Invalid token");
-                                break;
-                            default:
-                                LOGGER.error("Unknown error: {}", error);
-                        }
+                        LOGGER.error("Push [id:{}] - pns error: {}", push.id(), error);
+                        push.pnsError(error);
                     }
                 }
                 break;
             case BAD_REQUEST:
-                LOGGER.error("Invalid request: {}", content(msg));
+                LOGGER.error("Push [id:{}] - invalid request: {}", push.id(), content(push));
                 break;
             case UNAUTHORIZED:
-                LOGGER.error("Invalid authentication key");
+                LOGGER.error("Push [id:{}], application [id:{};package:{}] - invalid authentication key",
+                        push.application().id(), push.application().packageName());
                 break;
             default:
-                LOGGER.info(content);
+                LOGGER.error("Push [id:{}] - server code {}", push.id(), status);
+        }
+
+        if (success) {
+            push.state(State.SENT);
+        } else {
+            push.state(State.FAILED);
+        }
+
+        try {
+            pushStorage.update(push);
+        } catch (StorageException ex) {
+            LOGGER.error("Push [id:{}] - update failed", ex);
         }
     }
 }

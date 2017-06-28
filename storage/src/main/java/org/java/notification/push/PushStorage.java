@@ -17,18 +17,21 @@ public class PushStorage extends Storage {
 
     private static final String INSERT_PUSH = "{? = call F_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?)}";
     private static final String INSERT_PUSHES = "{? = call F_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?)}";
+    private static final String UPDATE_STATE_PNS_ID = "UPDATE PUSH SET state = ?, pns_id = ?, pns_error = ? WHERE id = ?";
 
     public void save(Push<?> push) throws StorageException {
-        withCallableStatement(INSERT_PUSH, st -> {
-            st.registerOutParameter(Types.NUMERIC);
-            st.setLong(push.application().id());
-            st.setString(push.token());
-            st.setString(push.title());
-            st.setString(push.body());
-            st.setString(push.icon());
-            st.setLong(push.system().id());
-            st.setString(push.extId());
-        }, st -> push.id(st.getLong()));
+        withCallableStatement(INSERT_PUSH,
+                st -> {
+                    st.registerOutParameter(Types.NUMERIC);
+                    st.setLong(push.application().id());
+                    st.setString(push.token());
+                    st.setString(push.title());
+                    st.setString(push.body());
+                    st.setString(push.icon());
+                    st.setLong(push.system().id());
+                    st.setString(push.extId());
+                },
+                st -> push.id(st.getLong()));
     }
 
     public void save(List<Push<?>> pushes) throws StorageException {
@@ -40,44 +43,56 @@ public class PushStorage extends Storage {
             return;
         }
 
-        withCallableStatement(INSERT_PUSHES, st -> {
-            int s = pushes.size();
-            Long[] applicationIds = new Long[s];
-            String[] tokens = new String[s];
-            String[] titles = new String[s];
-            String[] bodies = new String[s];
-            String[] icons = new String[s];
-            Long[] systemIds = new Long[s];
-            String[] extIds = new String[s];
+        withCallableStatement(INSERT_PUSHES,
+                st -> {
+                    int s = pushes.size();
+                    Long[] applicationIds = new Long[s];
+                    String[] tokens = new String[s];
+                    String[] titles = new String[s];
+                    String[] bodies = new String[s];
+                    String[] icons = new String[s];
+                    Long[] systemIds = new Long[s];
+                    String[] extIds = new String[s];
 
-            int i = 0;
-            for (Push push : pushes) {
-                applicationIds[i] = push.application().id();
-                tokens[i] = push.token();
-                titles[i] = push.title();
-                bodies[i] = push.body();
-                icons[i] = push.icon();
-                systemIds[i] = push.system().id();
-                extIds[i] = push.extId();
-                i++;
-            }
+                    int i = 0;
+                    for (Push push : pushes) {
+                        applicationIds[i] = push.application().id();
+                        tokens[i] = push.token();
+                        titles[i] = push.title();
+                        bodies[i] = push.body();
+                        icons[i] = push.icon();
+                        systemIds[i] = push.system().id();
+                        extIds[i] = push.extId();
+                        i++;
+                    }
 
-            st.registerOutParameter(Types.ARRAY, Type.T_NUMBER_20);
-            st.setArray(Type.T_NUMBER_20, applicationIds);
-            st.setArray(Type.T_VARCHAR2_256, tokens);
-            st.setArray(Type.T_VARCHAR2_256, titles);
-            st.setArray(Type.T_VARCHAR2_4000, bodies);
-            st.setArray(Type.T_VARCHAR2_16, icons);
-            st.setArray(Type.T_NUMBER_20, systemIds);
-            st.setArray(Type.T_VARCHAR2_36, extIds);
-        }, st -> {
-            BigDecimal[] ids = (BigDecimal[]) st.getArray();
+                    st.registerOutParameter(Types.ARRAY, Type.T_NUMBER_20);
+                    st.setArray(Type.T_NUMBER_20, applicationIds);
+                    st.setArray(Type.T_VARCHAR2_256, tokens);
+                    st.setArray(Type.T_VARCHAR2_256, titles);
+                    st.setArray(Type.T_VARCHAR2_4000, bodies);
+                    st.setArray(Type.T_VARCHAR2_16, icons);
+                    st.setArray(Type.T_NUMBER_20, systemIds);
+                    st.setArray(Type.T_VARCHAR2_36, extIds);
+                },
+                st -> {
+                    BigDecimal[] ids = (BigDecimal[]) st.getArray();
 
-            int i = 0;
-            for (Push push : pushes) {
-                push.id(ids[i].longValue());
-                i++;
-            }
-        });
+                    int i = 0;
+                    for (Push push : pushes) {
+                        push.id(ids[i].longValue());
+                        i++;
+                    }
+                });
+    }
+
+    public void update(Push<?> push) throws StorageException {
+        withPreparedStatement(UPDATE_STATE_PNS_ID,
+                st -> {
+                    st.setString(push.state().name());
+                    st.setString(push.pnsId());
+                    st.setString(push.pnsError());
+                    st.setLong(push.id());
+                });
     }
 }
