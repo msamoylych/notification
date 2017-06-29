@@ -30,16 +30,19 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     private static final int PORT = 443;
     private static final String PATH = "/fcm/send";
 
-    private static final String AUTHORIZATION = "authorization";
+    private static final String AUTHORIZATION_HEADER = "authorization";
     private static final String KEY = "key=";
 
-    private static final Pattern RESPONSE_PATTERN = Pattern.compile("(\"message_id\":\"(?<messageId>.+?)\"|\"error\":\"(?<error>\\w+?)\")");
     private static final String MESSAGE_ID = "messageId";
     private static final String ERROR = "error";
+    private static final Pattern RESPONSE_PATTERN =
+            Pattern.compile("(\"message_id\":\"(?<" + MESSAGE_ID + ">.+?)\"|\"error\":\"(?<" + ERROR +">\\w+?)\")");
 
     private final PushStorage pushStorage;
 
     public FCMSender(PushStorage pushStorage) {
+        assert pushStorage != null;
+
         this.pushStorage = pushStorage;
     }
 
@@ -71,13 +74,12 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     @Override
     public void headers(Headers headers, Push<FCMApplication> msg) {
         headers.set(Header.CONTENT_TYPE, ContentType.APPLICATION_JSON);
-        headers.set(AUTHORIZATION, KEY + msg.application().serverKey());
+        headers.set(AUTHORIZATION_HEADER, KEY + msg.application().serverKey());
     }
 
     @Override
     public String content(Push<FCMApplication> push) {
-        return Json
-                .start()
+        return Json.start()
                 .add("to", push.token())
                 .startObject("notification")
                 .add("title", push.title())
@@ -89,43 +91,39 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
 
     @Override
     public void handleResponse(Push<FCMApplication> push, Status status, Headers headers, String content) {
-        boolean success = false;
         switch (status) {
             case OK:
                 Matcher matcher = RESPONSE_PATTERN.matcher(content);
                 if (matcher.find()) {
                     String messageId = matcher.group(MESSAGE_ID);
                     if (messageId != null) {
+                        push.state(State.SENT);
                         push.pnsId(messageId);
-                        success = true;
                     } else {
                         String error = matcher.group(ERROR);
-                        LOGGER.error("Push [id:{}] - pns error: {}", push.id(), error);
+                        push.state(State.FAILED);
                         push.pnsError(error);
+                        LOGGER.error("{} - pns error: {}", push, error);
                     }
                 }
                 break;
             case BAD_REQUEST:
-                LOGGER.error("Push [id:{}] - invalid request: {}", push.id(), content(push));
+                push.state(State.FAILED);
+                LOGGER.error("{} - invalid request:\n{}", push, content(push));
                 break;
             case UNAUTHORIZED:
-                LOGGER.error("Push [id:{}], application [id:{};package:{}] - invalid authentication key",
-                        push.application().id(), push.application().packageName());
+                push.state(State.FAILED);
+                LOGGER.error("{} {} - invalid authentication key", push, push.application());
                 break;
             default:
-                LOGGER.error("Push [id:{}] - server code {}", push.id(), status);
-        }
-
-        if (success) {
-            push.state(State.SENT);
-        } else {
-            push.state(State.FAILED);
+                push.state(State.FAILED);
+                LOGGER.error("{} - server code {}\n{}", push, status, content);
         }
 
         try {
             pushStorage.update(push);
         } catch (StorageException ex) {
-            LOGGER.error("Push [id:{}] - update failed", ex);
+            LOGGER.error("{} - update failed", push, ex);
         }
     }
 }

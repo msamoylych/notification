@@ -17,7 +17,6 @@
         <spring>4.3.9.RELEASE</spring>
         <netty>4.1.12.Final</netty>
         <netty.tcnative>2.0.3.Final</netty.tcnative>
-        <jacksone>2.8.8</jacksone>
         <cxf>3.2.0.M</cxf>
         <logback>1.2.3</logback>
         <slf4j>1.7.25</slf4j>
@@ -183,12 +182,6 @@
                         <artifactId>netty-codec-http</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jacksone}</version>
             </dependency>
 
             <!-- Oracle -->

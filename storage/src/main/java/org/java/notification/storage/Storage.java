@@ -24,8 +24,6 @@ public abstract class Storage {
     }
 
     protected <R> R withStatement(String sql, Function<R> parse) throws StorageException {
-        assert dataSource != null;
-
         try (Connection connection = dataSource.getConnection()) {
             try (Statement st = connection.createStatement()) {
                 if (parse != null) {

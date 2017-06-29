@@ -8,9 +8,19 @@ import org.java.notification.push.PNS;
  */
 public abstract class Application extends Entity {
 
+    private String systemId;
+
     private String packageName;
 
     public abstract PNS pns();
+
+    public String systemId() {
+        return systemId;
+    }
+
+    public void systemId(String systemId) {
+        this.systemId = systemId;
+    }
 
     public String packageName() {
         return packageName;
@@ -18,5 +28,10 @@ public abstract class Application extends Entity {
 
     public void packageName(String packageName) {
         this.packageName = packageName;
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " [id:" + id() + ']';
     }
 }

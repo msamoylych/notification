@@ -14,35 +14,18 @@ public abstract class PreloadStorage extends Storage {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreloadStorage.class);
 
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock write = lock.writeLock();
-    private final Lock read = lock.readLock();
+    protected final Lock write = lock.writeLock();
+    protected final Lock read = lock.readLock();
 
     public abstract String code();
 
     void load() {
         try {
-            write.lock();
             doLoad();
         } catch (StorageException ex) {
-            LOGGER.error("Can't load " + code(), ex);
-        } finally {
-            write.unlock();
+            LOGGER.error("Can't load {}", code(), ex);
         }
     }
 
     protected abstract void doLoad() throws StorageException;
-
-    protected <R> R get(Function<R> func) {
-        try {
-            read.lock();
-            return func.apply();
-        } finally {
-            read.unlock();
-        }
-    }
-
-    @FunctionalInterface
-    protected interface Function<R> {
-        R apply();
-    }
 }

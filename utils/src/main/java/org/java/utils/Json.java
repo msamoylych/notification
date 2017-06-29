@@ -55,6 +55,9 @@ public class Json {
         }
 
         public JsonBuilder addArray(String name, String... values) {
+            if (values.length == 0) {
+                return this;
+            }
             if (addComma) {
                 builder.append(COMMA);
             }
