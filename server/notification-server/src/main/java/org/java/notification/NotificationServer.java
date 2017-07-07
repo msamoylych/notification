@@ -49,7 +49,7 @@ public class NotificationServer extends SmartLifecycle {
     private void startSenders() {
         ClientFactory clientFactory = BeanUtils.bean(ClientFactory.class);
         for (Sender sender : BeanUtils.beansOfType(Sender.class)) {
-            sender.init(clientFactory);
+            sender.start(clientFactory);
         }
     }
 

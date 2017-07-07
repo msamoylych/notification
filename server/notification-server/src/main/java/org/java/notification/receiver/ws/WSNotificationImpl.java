@@ -45,6 +45,6 @@ public class WSNotificationImpl implements WSNotification {
         MessageContext messageContext = context.getMessageContext();
         HttpServletRequest request = (HttpServletRequest) messageContext.get(MessageContext.SERVLET_REQUEST);
         String ip = request.getLocalAddr();
-        LOGGER.info("Request from {}", ip);
+        LOGGER.info("Request {}", ip);
     }
 }

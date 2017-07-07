@@ -1,12 +1,14 @@
 package org.java.netty.client.http2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.*;
 import io.netty.util.concurrent.PromiseCombiner;
 import io.netty.util.internal.PlatformDependent;
 import org.java.notification.Message;
+import org.java.utils.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -100,29 +102,29 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     }
 
     @Override
-    @SuppressWarnings({"unchecked", "deprecation"})
+    @SuppressWarnings({"unchecked"})
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Http2Exception {
         M message = (M) msg;
 
-        int streamId = streamIds.getAndAdd(2);
+        int streamId = connection().local().incrementAndGetNextStreamId();
 
-        ChannelPromise headersPromise = ctx.newPromise();
         Http2Headers headers = adapter.headers(message);
-        encoder().writeHeaders(ctx, streamId, headers, 0, false, headersPromise);
+        ChannelFuture headersFuture = encoder().writeHeaders(ctx, streamId, headers, 0, false, ctx.newPromise());
 
-        ChannelPromise dataPromise = ctx.newPromise();
-        byte[] content = adapter.content(message).getBytes(StandardCharsets.UTF_8);
-        ByteBuf data = ctx.alloc().ioBuffer(content.length);
+        byte[] content = StringUtils.getBytes(adapter.content(message));
+        ByteBuf data = ctx.alloc().buffer(content.length);
         data.writeBytes(content);
-        encoder().writeData(ctx, streamId, data, 0, true, dataPromise);
+        ChannelFuture dataFuture = encoder().writeData(ctx, streamId, data, 0, true, ctx.newPromise());
 
         PromiseCombiner promiseCombiner = new PromiseCombiner();
-        promiseCombiner.addAll(headersPromise, dataPromise);
+        promiseCombiner.addAll(headersFuture, dataFuture);
         promiseCombiner.finish(promise);
 
         promise.addListener(future -> {
             if (future.isSuccess()) {
                 streams.put(streamId, new Stream(message));
+            } else {
+                adapter.fail(message, future.cause());
             }
         });
     }

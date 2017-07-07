@@ -31,7 +31,7 @@ public class WSReceiver implements Receiver {
     public void start(ReceiverSetting setting) {
         String address = "http://" + setting.host() + ":" + setting.port() + "/" + StringUtils.notNull(setting.path());
         endpoint.publish(address);
-        LOGGER.info("WS receiver started ({})", address);
+        LOGGER.info("Receiver started ({})", address);
     }
 
     @Override

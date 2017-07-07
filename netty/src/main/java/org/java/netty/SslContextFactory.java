@@ -36,7 +36,6 @@ public class SslContextFactory {
         try {
             return clientSslContextBuilder().build();
         } catch (SSLException ex) {
-            LOGGER.error("Build SSL context error", ex);
             throw new IllegalStateException("Build SSL context error", ex);
         }
     }
@@ -45,11 +44,11 @@ public class SslContextFactory {
         try {
             return clientSslContextBuilder()
                     .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
-                    .applicationProtocolConfig(new ApplicationProtocolConfig(Protocol.ALPN,
-                    SelectorFailureBehavior.NO_ADVERTISE, SelectedListenerFailureBehavior.ACCEPT,
-                    ApplicationProtocolNames.HTTP_2)).build();
+                    .applicationProtocolConfig(new ApplicationProtocolConfig(
+                            Protocol.ALPN, SelectorFailureBehavior.NO_ADVERTISE, SelectedListenerFailureBehavior.ACCEPT,
+                            ApplicationProtocolNames.HTTP_2))
+                    .build();
         } catch (SSLException ex) {
-            LOGGER.error("Build SSL context error", ex);
             throw new IllegalStateException("Build SSL context error", ex);
         }
     }

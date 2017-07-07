@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 @Service
 public interface Sender<M extends Message> {
 
-    void init(ClientFactory clientFactory);
+    void start(ClientFactory clientFactory);
 
     void send(M msg) throws SendException;
 }

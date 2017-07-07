@@ -8,7 +8,7 @@ import org.java.utils.http.Status;
 /**
  * Created by msamoylych on 05.04.2017.
  */
-public interface HttpClientAdapter<M extends Message> extends ClientAdapter {
+public interface HttpClientAdapter<M extends Message> extends ClientAdapter<M> {
 
     default boolean http2() {
         return false;

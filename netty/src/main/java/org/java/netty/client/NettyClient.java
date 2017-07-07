@@ -8,28 +8,32 @@ import org.java.netty.Netty;
 import org.java.notification.Message;
 import org.java.notification.client.Client;
 import org.java.notification.client.ClientAdapter;
-import org.java.notification.client.SendException;
-import org.java.utils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Service;
 
 /**
  * Created by msamoylych on 04.04.2017.
  */
+@Service
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public abstract class NettyClient<M extends Message> implements Client<M> {
-    protected Logger LOGGER;
+    protected final Logger LOGGER = LoggerFactory.getLogger(NettyClient.class);
 
-    protected final ClientAdapter adapter;
+    @Autowired
+    @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
+    private Netty netty;
+
+    protected final ClientAdapter<M> adapter;
     protected final Bootstrap bootstrap;
 
     protected volatile Channel channel;
 
-    public NettyClient(ClientAdapter adapter) {
+    public NettyClient(ClientAdapter<M> adapter) {
         this.adapter = adapter;
-
-        LOGGER = LoggerFactory.getLogger(adapter.getClass());
-
-        Netty netty = BeanUtils.bean(Netty.class);
 
         bootstrap = new Bootstrap()
                 .group(netty.client())
@@ -39,17 +43,14 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
                 .option(ChannelOption.SO_KEEPALIVE, true);
     }
 
-    public void send(M msg) throws SendException {
-        try {
-            channel().writeAndFlush(msg).addListener(future -> {
-                if (future.cause() != null) {
-                    LOGGER.error("Send error ({})", adapter.getClass().getSimpleName(), future.cause());
-                }
-            });
-        } catch (Throwable th) {
-            LOGGER.error("Send error ({})", adapter.getClass().getSimpleName(), th);
-            throw new SendException();
-        }
+    public void send(M msg) {
+        channel().writeAndFlush(msg).addListener(future -> {
+            if (future.isSuccess()) {
+                LOGGER.info("{} - sent", msg);
+            } else {
+                adapter.fail(msg, future.cause());
+            }
+        });
     }
 
     private Channel channel() {

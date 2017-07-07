@@ -1,8 +1,8 @@
 package org.java.utils.http;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by msamoylych on 20.04.2017.
@@ -18,10 +18,10 @@ public enum Status {
 
     private final int code;
 
-    private static final Map<Integer, Status> MAP = new HashMap<>();
+    private static final Map<Integer, Status> MAP;
 
     static {
-        Arrays.stream(values()).forEach(status -> MAP.put(status.code, status));
+        MAP = Arrays.stream(values()).collect(Collectors.toMap(status -> status.code, status -> status));
     }
 
     Status(int code) {
@@ -33,6 +33,10 @@ public enum Status {
     }
 
     public static Status status(int code) {
-        return MAP.get(code);
+        Status status = MAP.get(code);
+        if (status == null) {
+            throw new IllegalStateException("Unknown code: " + code);
+        }
+        return status;
     }
 }

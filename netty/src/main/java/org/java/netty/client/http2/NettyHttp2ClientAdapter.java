@@ -27,7 +27,7 @@ class NettyHttp2ClientAdapter<M extends Message> {
                 .scheme(HTTPS.name())
                 .authority(adapter.host())
                 .path(adapter.path());
-        adapter.headers(new NettyHttp2ClientHeaders(headers), msg);
+        adapter.headers(NettyHttp2ClientHeaders.wrap(headers), msg);
         return headers;
     }
 
@@ -40,6 +40,10 @@ class NettyHttp2ClientAdapter<M extends Message> {
         adapter.handleResponse(msg, Status.status(status.code()), new NettyHttp2ClientHeaders(headers), response);
     }
 
+    void fail(M msg, Throwable th) {
+        adapter.fail(msg, th);
+    }
+
     private CharSequence method() {
         switch (adapter.method()) {
             case GET:
@@ -47,16 +51,19 @@ class NettyHttp2ClientAdapter<M extends Message> {
             case POST:
                 return HttpMethod.POST.asciiName();
             default:
-                throw new IllegalStateException("unknown method: " + adapter.method());
+                throw new IllegalStateException("Unknown method: " + adapter.method());
         }
     }
 
     private static class NettyHttp2ClientHeaders implements HttpClientAdapter.Headers {
-
         private Http2Headers headers;
 
         private NettyHttp2ClientHeaders(Http2Headers headers) {
             this.headers = headers;
+        }
+
+        private static NettyHttp2ClientHeaders wrap(Http2Headers headers) {
+            return new NettyHttp2ClientHeaders(headers);
         }
 
         @Override

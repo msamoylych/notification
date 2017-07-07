@@ -9,5 +9,5 @@ import org.springframework.stereotype.Service;
 @Service
 public interface ClientFactory {
 
-    <M extends Message> Client<M> createClient(ClientAdapter adapter);
+    <M extends Message> Client<M> createClient(ClientAdapter<M> adapter);
 }

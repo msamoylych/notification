@@ -3,6 +3,8 @@ package org.java.notification.push;
 import org.java.notification.storage.Storage;
 import org.java.notification.storage.StorageException;
 import org.java.notification.storage.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
@@ -14,6 +16,7 @@ import java.util.List;
  */
 @Repository
 public class PushStorage extends Storage {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PushStorage.class);
 
     private static final String INSERT_PUSH = "{? = call F_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?)}";
     private static final String INSERT_PUSHES = "{? = call F_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?)}";
@@ -86,13 +89,17 @@ public class PushStorage extends Storage {
                 });
     }
 
-    public void update(Push<?> push) throws StorageException {
-        withPreparedStatement(UPDATE_STATE_PNS_ID,
-                st -> {
-                    st.setString(push.state().name());
-                    st.setString(push.pnsId());
-                    st.setString(push.pnsError());
-                    st.setLong(push.id());
-                });
+    public void update(Push<?> push) {
+        try {
+            withPreparedStatement(UPDATE_STATE_PNS_ID,
+                    st -> {
+                        st.setString(push.state().name());
+                        st.setString(push.pnsId());
+                        st.setString(push.pnsError());
+                        st.setLong(push.id());
+                    });
+        } catch (StorageException ex) {
+            LOGGER.error("{} - update failed", push, ex);
+        }
     }
 }

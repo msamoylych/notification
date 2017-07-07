@@ -6,7 +6,6 @@ import org.java.notification.push.PushStorage;
 import org.java.notification.push.State;
 import org.java.notification.push.application.FCMApplication;
 import org.java.notification.sender.AbstractSender;
-import org.java.notification.storage.StorageException;
 import org.java.utils.Json;
 import org.java.utils.http.ContentType;
 import org.java.utils.http.Header;
@@ -36,7 +35,7 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     private static final String MESSAGE_ID = "messageId";
     private static final String ERROR = "error";
     private static final Pattern RESPONSE_PATTERN =
-            Pattern.compile("(\"message_id\":\"(?<" + MESSAGE_ID + ">.+?)\"|\"error\":\"(?<" + ERROR +">\\w+?)\")");
+            Pattern.compile("(\"message_id\":\"(?<" + MESSAGE_ID + ">.+?)\"|\"error\":\"(?<" + ERROR + ">\\w+?)\")");
 
     private final PushStorage pushStorage;
 
@@ -72,9 +71,9 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     }
 
     @Override
-    public void headers(Headers headers, Push<FCMApplication> msg) {
+    public void headers(Headers headers, Push<FCMApplication> push) {
         headers.set(Header.CONTENT_TYPE, ContentType.APPLICATION_JSON);
-        headers.set(AUTHORIZATION_HEADER, KEY + msg.application().serverKey());
+        headers.set(AUTHORIZATION_HEADER, KEY + push.application().serverKey());
     }
 
     @Override
@@ -109,7 +108,7 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                 break;
             case BAD_REQUEST:
                 push.state(State.FAILED);
-                LOGGER.error("{} - invalid request:\n{}", push, content(push));
+                LOGGER.error("{} - invalid request", push);
                 break;
             case UNAUTHORIZED:
                 push.state(State.FAILED);
@@ -117,13 +116,17 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                 break;
             default:
                 push.state(State.FAILED);
-                LOGGER.error("{} - server code {}\n{}", push, status, content);
+                LOGGER.error("{} - response code {}", push, status.code());
         }
 
-        try {
-            pushStorage.update(push);
-        } catch (StorageException ex) {
-            LOGGER.error("{} - update failed", push, ex);
-        }
+        pushStorage.update(push);
+    }
+
+    @Override
+    public void fail(Push<FCMApplication> push, Throwable th) {
+        push.state(State.FAILED);
+        LOGGER.error("{} - fail", push, th);
+
+        pushStorage.update(push);
     }
 }

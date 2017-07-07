@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class NettyClientFactory implements ClientFactory {
 
     @Override
-    public <M extends Message> Client<M> createClient(ClientAdapter adapter) {
+    public <M extends Message> Client<M> createClient(ClientAdapter<M> adapter) {
         if (adapter instanceof HttpClientAdapter) {
             HttpClientAdapter<M> httpClientAdapter = (HttpClientAdapter<M>) adapter;
             if (httpClientAdapter.http2()) {
