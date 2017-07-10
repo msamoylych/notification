@@ -31,4 +31,9 @@ public class PushModel {
 
     @XmlElement
     public String icon;
+
+    @Override
+    public String toString() {
+        return "PushModel [id:" + id + ']';
+    }
 }

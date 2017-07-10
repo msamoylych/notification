@@ -4,7 +4,6 @@ import org.java.notification.storage.Storage;
 import org.java.notification.storage.StorageException;
 import org.springframework.stereotype.Repository;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,29 +15,21 @@ import static org.java.notification.setting.ReceiverSetting.Type;
 @Repository
 public class ReceiverStorage extends Storage {
 
-    private static final String SELECT = "SELECT id, server, type, host, port, path FROM RECEIVER";
-    private static final String SELECT_BY_SERVER = SELECT + " WHERE server IS NULL OR server = ?";
+    private static final String SELECT = "SELECT id, type, host, port, path FROM RECEIVER";
 
     public List<ReceiverSetting> getReceivers() throws StorageException {
-        return withPreparedStatement(SELECT, this::parse);
-    }
-
-    public List<ReceiverSetting> getServerReceivers(String server) throws StorageException {
-        return withPreparedStatement(SELECT_BY_SERVER, st -> st.setString(server), this::parse);
-    }
-
-    private List<ReceiverSetting> parse(ResultSetWrapper rs) throws SQLException {
-        List<ReceiverSetting> result = new ArrayList<>();
-        while (rs.next()) {
-            ReceiverSetting rset = new ReceiverSetting();
-            rset.id(rs.getLong());
-            rset.server(rs.getString());
-            rset.type(Type.valueOf(rs.getString()));
-            rset.host(rs.getString());
-            rset.port(rs.getInt());
-            rset.path(rs.getString());
-            result.add(rset);
-        }
-        return result;
+        return withPreparedStatement(SELECT, rs -> {
+            List<ReceiverSetting> result = new ArrayList<>();
+            while (rs.next()) {
+                ReceiverSetting setting = new ReceiverSetting();
+                setting.id(rs.getLong());
+                setting.type(rs.getEnum(Type.class));
+                setting.host(rs.getString());
+                setting.port(rs.getInt());
+                setting.path(rs.getString());
+                result.add(setting);
+            }
+            return result;
+        });
     }
 }

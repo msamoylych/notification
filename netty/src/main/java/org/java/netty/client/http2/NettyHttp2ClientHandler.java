@@ -5,55 +5,22 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.*;
+import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.PromiseCombiner;
 import io.netty.util.internal.PlatformDependent;
+import org.java.netty.NettyUtils;
 import org.java.notification.Message;
-import org.java.utils.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by msamoylych on 04.04.2017.
  */
 class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler {
 
-    private final AtomicInteger streamIds = new AtomicInteger(1);
-
     private final NettyHttp2ClientAdapter<M> adapter;
-    private final Map<Integer, Stream> streams;
-
-    static class Builder<M extends Message> extends AbstractHttp2ConnectionHandlerBuilder<NettyHttp2ClientHandler<M>, Builder<M>> {
-
-        private NettyHttp2ClientAdapter<M> adapter;
-
-        Builder() {
-            server(false);
-        }
-
-        @Override
-        protected Builder<M> frameLogger(Http2FrameLogger frameLogger) {
-            return super.frameLogger(frameLogger);
-        }
-
-        Builder<M> adapter(NettyHttp2ClientAdapter<M> adapter) {
-            this.adapter = adapter;
-            return this;
-        }
-
-        @Override
-        protected NettyHttp2ClientHandler<M> build() {
-            return super.build();
-        }
-
-        @Override
-        protected NettyHttp2ClientHandler<M> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-            NettyHttp2ClientHandler<M> handler = new NettyHttp2ClientHandler<>(decoder, encoder, initialSettings, adapter);
-            frameListener(handler.new NettyHttp2ClientFrameListener());
-            return handler;
-        }
-    }
+    private final Map<Integer, StreamData> streams;
+    private long pingData = 0;
 
     private NettyHttp2ClientHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings,
                                     NettyHttp2ClientAdapter<M> adapter) {
@@ -63,6 +30,11 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     }
 
     private class NettyHttp2ClientFrameListener extends Http2FrameAdapter {
+        private ChannelPromise settingsPromise;
+
+        public NettyHttp2ClientFrameListener(ChannelPromise settingsPromise) {
+            this.settingsPromise = settingsPromise;
+        }
 
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
@@ -71,13 +43,13 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
-            Stream stream;
+            StreamData streamData;
             if (endOfStream) {
-                stream = streams.remove(streamId);
-                adapter.handleResponse(stream.message, headers, null);
+                streamData = streams.remove(streamId);
+                adapter.handleResponse(streamData.message, headers, null);
             } else {
-                stream = streams.get(streamId);
-                stream.headers = headers;
+                streamData = streams.get(streamId);
+                streamData.headers = headers;
             }
         }
 
@@ -85,14 +57,22 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
             int bytesProcessed = data.readableBytes() + padding;
 
-            String response = data.toString(StandardCharsets.UTF_8);
-
             if (endOfStream) {
-                Stream stream = streams.remove(streamId);
-                adapter.handleResponse(stream.message, stream.headers, response);
+                StreamData streamData = streams.remove(streamId);
+                adapter.handleResponse(streamData.message, streamData.headers, NettyUtils.toString(data));
             }
 
             return bytesProcessed;
+        }
+
+        @Override
+        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+            settingsPromise.setSuccess();
+        }
+
+        @Override
+        public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
+            super.onPingAckRead(ctx, data);
         }
 
         @Override
@@ -106,14 +86,16 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Http2Exception {
         M message = (M) msg;
 
-        int streamId = connection().local().incrementAndGetNextStreamId();
+        int streamId = streamId();
+        if (streamId < 0) {
+            ctx.close();
+            return;
+        }
 
         Http2Headers headers = adapter.headers(message);
         ChannelFuture headersFuture = encoder().writeHeaders(ctx, streamId, headers, 0, false, ctx.newPromise());
 
-        byte[] content = StringUtils.getBytes(adapter.content(message));
-        ByteBuf data = ctx.alloc().buffer(content.length);
-        data.writeBytes(content);
+        ByteBuf data = NettyUtils.toByteBuf(ctx, adapter.content(message));
         ChannelFuture dataFuture = encoder().writeData(ctx, streamId, data, 0, true, ctx.newPromise());
 
         PromiseCombiner promiseCombiner = new PromiseCombiner();
@@ -122,18 +104,70 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         promise.addListener(future -> {
             if (future.isSuccess()) {
-                streams.put(streamId, new Stream(message));
+                streams.put(streamId, new StreamData(message));
             } else {
                 adapter.fail(message, future.cause());
             }
         });
     }
 
-    private class Stream {
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt instanceof IdleStateEvent) {
+            ByteBuf data = ctx.alloc().buffer(8, 8);
+            data.writeLong(pingData++);
+            encoder().writePing(ctx, false, data, ctx.newPromise());
+        }
+
+        super.userEventTriggered(ctx, evt);
+    }
+
+    private int streamId() {
+        return connection().local().incrementAndGetNextStreamId();
+    }
+
+    static class Builder<M extends Message> extends AbstractHttp2ConnectionHandlerBuilder<NettyHttp2ClientHandler<M>, Builder<M>> {
+
+        private NettyHttp2ClientAdapter<M> adapter;
+        private ChannelPromise settingsPromise;
+
+        Builder() {
+            server(false);
+        }
+
+        Builder<M> adapter(NettyHttp2ClientAdapter<M> adapter) {
+            this.adapter = adapter;
+            return this;
+        }
+
+        Builder<M> settingsPromise(ChannelPromise settingsPromise) {
+            this.settingsPromise = settingsPromise;
+            return this;
+        }
+
+        @Override
+        protected Builder<M> frameLogger(Http2FrameLogger frameLogger) {
+            return super.frameLogger(frameLogger);
+        }
+
+        @Override
+        protected NettyHttp2ClientHandler<M> build() {
+            return super.build();
+        }
+
+        @Override
+        protected NettyHttp2ClientHandler<M> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
+            NettyHttp2ClientHandler<M> handler = new NettyHttp2ClientHandler<>(decoder, encoder, initialSettings, adapter);
+            frameListener(handler.new NettyHttp2ClientFrameListener(settingsPromise));
+            return handler;
+        }
+    }
+
+    private class StreamData {
         private M message;
         private Http2Headers headers;
 
-        private Stream(M message) {
+        private StreamData(M message) {
             this.message = message;
         }
     }

@@ -7,5 +7,5 @@ import org.java.notification.Message;
  */
 public interface Client<M extends Message> {
 
-    void send(M msg);
+    void send(M msg) throws SendException;
 }

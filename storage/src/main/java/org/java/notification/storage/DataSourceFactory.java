@@ -29,8 +29,7 @@ final class DataSourceFactory implements FactoryBean<DataSource> {
 
         try (Connection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            LOGGER.info("DataSource info:");
-            LOGGER.info(metaData.getDatabaseProductVersion());
+            LOGGER.info("Database: {}", metaData.getDatabaseProductVersion());
             LOGGER.info("URL: {}", metaData.getURL());
             LOGGER.info("User: {}", metaData.getUserName());
         } catch (Throwable th) {

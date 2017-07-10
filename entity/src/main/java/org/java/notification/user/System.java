@@ -36,4 +36,9 @@ public class System extends Entity {
     public void locked(boolean locked) {
         this.locked = locked;
     }
+
+    @Override
+    public String toString() {
+        return "System [id:" + id() + ",code:" + code + ']';
+    }
 }

@@ -32,28 +32,24 @@ public class SslContextFactory {
         }
     }
 
-    public static SslContext buildSSLContext() {
+    public static SslContext buildHttpSslContext() {
         try {
-            return clientSslContextBuilder().build();
+            return SslContextBuilder.forClient().sslProvider(SSL_PROVIDER).build();
         } catch (SSLException ex) {
-            throw new IllegalStateException("Build SSL context error", ex);
+            throw new IllegalStateException("Build client SSL context error", ex);
         }
     }
 
     public static SslContext buildHttp2SslContext() {
         try {
-            return clientSslContextBuilder()
+            return SslContextBuilder.forClient().sslProvider(SSL_PROVIDER)
                     .ciphers(Http2SecurityUtil.CIPHERS, SupportedCipherSuiteFilter.INSTANCE)
                     .applicationProtocolConfig(new ApplicationProtocolConfig(
                             Protocol.ALPN, SelectorFailureBehavior.NO_ADVERTISE, SelectedListenerFailureBehavior.ACCEPT,
                             ApplicationProtocolNames.HTTP_2))
                     .build();
         } catch (SSLException ex) {
-            throw new IllegalStateException("Build SSL context error", ex);
+            throw new IllegalStateException("Build client SSL context error", ex);
         }
-    }
-
-    private static SslContextBuilder clientSslContextBuilder() {
-        return SslContextBuilder.forClient().sslProvider(SSL_PROVIDER);
     }
 }

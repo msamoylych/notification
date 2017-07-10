@@ -17,6 +17,6 @@ public class ApplicationStorageTest extends AbstractTestNGSpringContextTests {
 
     @Test
     public void test() throws Exception {
-        applicationStorage.application("test", null, null);
+        applicationStorage.application(1L, null, null);
     }
 }

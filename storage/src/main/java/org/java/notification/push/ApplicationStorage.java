@@ -26,11 +26,11 @@ public class ApplicationStorage extends PreloadStorage {
 
     private final Map<Long, Application> applicationsById = new HashMap<>();
 
-    private final Map<String, Map<PNS, Map<String, Application>>> applications = new HashMap<>();
+    private final Map<Long, Map<PNS, Map<String, Application>>> applications = new HashMap<>();
 
-    private final Map<String, Map<PNS, Application>> systemPNSApplications = new HashMap<>();
-    private final Map<String, Map<String, Application>> systemPackageApplications = new HashMap<>();
-    private final Map<String, Application> systemApplications = new HashMap<>();
+    private final Map<Long, Map<PNS, Application>> systemPNSApplications = new HashMap<>();
+    private final Map<Long, Map<String, Application>> systemPackageApplications = new HashMap<>();
+    private final Map<Long, Application> systemApplications = new HashMap<>();
 
     @Override
     public String code() {
@@ -46,7 +46,7 @@ public class ApplicationStorage extends PreloadStorage {
         }
     }
 
-    public Application application(String systemId, PNS pns, String packageName) {
+    public Application application(Long systemId, PNS pns, String packageName) {
         try {
             read.lock();
 
@@ -84,7 +84,7 @@ public class ApplicationStorage extends PreloadStorage {
             List<Application> applications = new ArrayList<>();
 
             while (rs.next()) {
-                String systemId = rs.getString();
+                Long systemId = rs.getLong();
                 Long applicationId = rs.getLong();
                 PNS pns = PNS.valueOf(rs.getString());
                 Application application;
@@ -132,8 +132,8 @@ public class ApplicationStorage extends PreloadStorage {
                     .put(app.packageName(), app);
         }
 
-        for (Map.Entry<String, Map<PNS, Map<String, Application>>> applications : applications.entrySet()) {
-            String systemId = applications.getKey();
+        for (Map.Entry<Long, Map<PNS, Map<String, Application>>> applications : applications.entrySet()) {
+            Long systemId = applications.getKey();
             Application systemApplication = null;
             boolean one = true;
 

@@ -176,6 +176,10 @@ public abstract class Storage {
             return resultSet.getString(++idx);
         }
 
+        public <E extends Enum<E>> E getEnum(Class<E> enumType) throws SQLException {
+            return Enum.valueOf(enumType, getString());
+        }
+
         public String getString(int columnIndex) throws SQLException {
             return resultSet.getString(columnIndex);
         }

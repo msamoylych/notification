@@ -122,9 +122,4 @@ public class Push<A extends Application> extends Entity implements Message {
     public void pnsError(String pnsError) {
         this.pnsError = pnsError;
     }
-
-    @Override
-    public String toString() {
-        return "Push [id:" + id() + ']';
-    }
 }

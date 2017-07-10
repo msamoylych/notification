@@ -7,7 +7,9 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
+import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.java.netty.Netty;
 import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
@@ -20,25 +22,25 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 04.04.2017.
  */
 public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
-    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.DEBUG);
+    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.INFO);
 
-    private ChannelPromise configure;
+    private ChannelPromise settings;
 
-    public NettyHttp2Client(HttpClientAdapter<M> adapter) {
-        super(adapter);
+    public NettyHttp2Client(Netty netty, HttpClientAdapter<M> adapter) {
+        super(netty, adapter);
 
         SslContext sslContext = SslContextFactory.buildHttp2SslContext();
 
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
+                settings = ch.newPromise();
+
                 ChannelPipeline pipeline = ch.pipeline();
 
                 pipeline.addLast(new WriteTimeoutHandler(1_000, TimeUnit.MILLISECONDS));
 
                 pipeline.addLast(sslContext.newHandler(ch.alloc()));
-
-                configure = ch.newPromise();
 
                 pipeline.addLast(new ApplicationProtocolNegotiationHandler("") {
                     @Override
@@ -46,13 +48,15 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
                         if (ApplicationProtocolNames.HTTP_2.equals(protocol)) {
                             ChannelPipeline channelPipeline = ctx.pipeline();
 
+                            channelPipeline.addLast(new IdleStateHandler(0, 0, 60_000, TimeUnit.MILLISECONDS));
+
                             NettyHttp2ClientHandler<M> connectionHandler = new NettyHttp2ClientHandler.Builder<M>()
                                     .frameLogger(FRAME_LOGGER)
                                     .adapter(new NettyHttp2ClientAdapter<>(adapter))
+                                    .settingsPromise(settings)
                                     .build();
 
                             channelPipeline.addLast(connectionHandler);
-                            configure.setSuccess();
                         } else {
                             ctx.close();
                         }
@@ -62,27 +66,25 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
         });
     }
 
-    protected Channel connect() {
+    protected Channel connect() throws NettyException {
         synchronized (bootstrap) {
             if (channel != null) {
                 return channel;
             }
 
-            LOGGER.info("Connecting ({})", adapter.getClass().getSimpleName());
             ChannelFuture connect = bootstrap.connect();
             if (connect.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS) && connect.isSuccess()) {
-                LOGGER.info("Connected ({})", adapter.getClass().getSimpleName());
+                Channel ch = connect.channel();
 
-                final Channel ch = connect.channel();
-
-                if (configure.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS)) {
+                if (settings.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS)) {
                     ch.closeFuture().addListener(future -> {
                         synchronized (bootstrap) {
                             channel = null;
+                            LOGGER.info("{} - disconnected", adapter);
                         }
-                        LOGGER.info("Disconnected ({})", adapter.getClass().getSimpleName());
                     });
                     channel = ch;
+                    LOGGER.info("{} - connected", adapter);
                     return ch;
                 } else {
                     ch.close();

@@ -7,6 +7,8 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.java.netty.Netty;
 import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
@@ -20,15 +22,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class NettyHttpClient<M extends Message> extends NettyClient<M> {
 
-    public NettyHttpClient(HttpClientAdapter<M> adapter) {
-        super(adapter);
+    public NettyHttpClient(Netty netty, HttpClientAdapter<M> adapter) {
+        super(netty, adapter);
 
-        SslContext sslContext = SslContextFactory.buildSSLContext();
+        SslContext sslContext = SslContextFactory.buildHttpSslContext();
 
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
+
+                pipeline.addLast(new WriteTimeoutHandler(1_000, TimeUnit.MILLISECONDS));
 
                 pipeline.addLast(sslContext.newHandler(ch.alloc()));
 
@@ -40,19 +44,23 @@ public class NettyHttpClient<M extends Message> extends NettyClient<M> {
     }
 
     @Override
-    protected Channel connect() {
+    protected Channel connect() throws NettyException {
         synchronized (bootstrap) {
             if (channel != null) {
                 return channel;
             }
 
-            LOGGER.info("Connecting ({})", adapter.getClass().getSimpleName());
             ChannelFuture connect = bootstrap.connect();
             if (connect.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS) && connect.isSuccess()) {
-                LOGGER.info("Connected ({})", adapter.getClass().getSimpleName());
-
-                final Channel ch = connect.channel();
+                Channel ch = connect.channel();
+                ch.closeFuture().addListener(future -> {
+                    synchronized (bootstrap) {
+                        channel = null;
+                        LOGGER.info("{} - disconnected", adapter);
+                    }
+                });
                 channel = ch;
+                LOGGER.info("{} - connected", adapter);
                 return ch;
             } else {
                 if (connect.cause() != null) {

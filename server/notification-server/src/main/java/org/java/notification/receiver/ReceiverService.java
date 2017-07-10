@@ -33,7 +33,6 @@ public class ReceiverService {
     private static final ResultModel INVALID_SYSTEM_CODE = new ResultModel("invalid-system-code");
     private static final ResultModel SYSTEM_LOCKED = new ResultModel("system-locked");
     private static final ResultModel DUPLICATE_PUSH = new ResultModel("duplicate-push");
-    private static final ResultModel ERROR = new ResultModel("duplicate-push");
 
     private final SystemStorage systemStorage;
     private final ApplicationStorage applicationStorage;
@@ -61,7 +60,7 @@ public class ReceiverService {
             return INVALID_SYSTEM_CODE;
         }
         if (system.locked()) {
-            LOGGER.error("System with code <{}> is locked", systemCode);
+            LOGGER.error("{} is locked", system);
             return SYSTEM_LOCKED;
         }
 
@@ -79,9 +78,9 @@ public class ReceiverService {
                 continue;
             }
 
-            Application application = applicationStorage.application(systemCode, pushModel.pns, pushModel.packageName);
+            Application application = applicationStorage.application(system.id(), pushModel.pns, pushModel.packageName);
             if (application == null) {
-                LOGGER.error("PushModel {}: application not found", pushModel.id);
+                LOGGER.error("{}: application not found", pushModel);
                 result.error = "application-not-found";
                 continue;
             }
@@ -132,23 +131,23 @@ public class ReceiverService {
             return false;
         }
         if (!StringUtils.checkLength(pushModel.id, 36)) {
-            LOGGER.error("PushModel <{}>: id length more than 36 characters", pushModel.id);
+            LOGGER.error("{}: id length more than 36 characters", pushModel);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.token, 256)) {
-            LOGGER.error("PushModel <{}>: token length more than 256 characters", pushModel.id);
+            LOGGER.error("{}: token length more than 256 characters", pushModel);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.title, 256)) {
-            LOGGER.error("PushModel <{}>: title length more than 256 characters", pushModel.id);
+            LOGGER.error("{}: title length more than 256 characters", pushModel);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.body, 4000)) {
-            LOGGER.error("PushModel <{}>: body length more than 4000 characters", pushModel.id);
+            LOGGER.error("{}: body length more than 4000 characters", pushModel);
             return false;
         }
         if (!StringUtils.checkLength(pushModel.icon, 16)) {
-            LOGGER.error("PushModel <{}>: icon length more than 16 characters", pushModel.id);
+            LOGGER.error("{}: icon length more than 16 characters", pushModel);
             return false;
         }
         return true;

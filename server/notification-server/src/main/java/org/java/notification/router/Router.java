@@ -9,6 +9,8 @@ import org.java.utils.GenericUtils;
 import org.java.utils.lifecycle.SmartLifecycle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.ParameterizedType;
@@ -23,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Created by msamoylych on 30.05.2017.
  */
 @Component
-public class Router extends SmartLifecycle {
+public class Router extends SmartLifecycle implements ApplicationContextAware {
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
     private final Map<Class<? extends Application>, Sender> pushSenders = new HashMap<>();
@@ -37,7 +39,6 @@ public class Router extends SmartLifecycle {
     protected void doStart() throws Exception {
         executor = new ThreadPoolExecutor(1, 8, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(100000),
                 new RouterThreadFactory(), new RejectedHandler());
-        initSenderMaps();
     }
 
     @Override
@@ -54,8 +55,8 @@ public class Router extends SmartLifecycle {
     }
 
     @SuppressWarnings("unchecked")
-    private void initSenderMaps() {
-        BeanUtils.forEachBeanOfType(Sender.class, sender -> {
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        BeanUtils.forEachBeanOfType(applicationContext, Sender.class, sender -> {
             ParameterizedType senderType = (ParameterizedType) GenericUtils.getGenericType(sender);
             if (senderType.getRawType() == Push.class) {
                 Type applicationType = GenericUtils.getGenericType(senderType);

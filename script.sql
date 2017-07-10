@@ -34,7 +34,6 @@ CREATE PROCEDURE P_UPDATE_CHANGES(code VARCHAR2) AS
 CREATE TABLE RECEIVER (
   ID         NUMBER(20)                                      NOT NULL,
   CREATETIME TIMESTAMP DEFAULT sys_extract_utc(systimestamp) NOT NULL,
-  SERVER     VARCHAR2(32)                                    NULL,
   TYPE       VARCHAR2(10)                                    NOT NULL,
   HOST       VARCHAR2(32)                                    NOT NULL,
   PORT       NUMBER(5)                                       NOT NULL,
@@ -46,7 +45,7 @@ ALTER TABLE RECEIVER
   USING INDEX;
 
 CREATE UNIQUE INDEX RECEIVER_TYPE
-  ON RECEIVER (SERVER, TYPE);
+  ON RECEIVER (TYPE);
 
 ALTER TABLE RECEIVER
   ADD CONSTRAINT RECEIVER_TYPE_CH CHECK (TYPE IN ('WS', 'RS'));

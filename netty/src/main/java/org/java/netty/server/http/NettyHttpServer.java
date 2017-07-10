@@ -3,6 +3,7 @@ package org.java.netty.server.http;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
+import org.java.netty.Netty;
 import org.java.netty.server.NettyServer;
 import org.java.notification.server.http.HttpServerHandler;
 
@@ -11,8 +12,8 @@ import org.java.notification.server.http.HttpServerHandler;
  */
 public class NettyHttpServer extends NettyServer {
 
-    public NettyHttpServer(String name, int port, HttpServerHandler handler) {
-        super(name, port);
+    public NettyHttpServer(Netty netty, String name, int port, HttpServerHandler handler) {
+        super(netty, name, port);
 
         bootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
             @Override

@@ -9,7 +9,6 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import org.java.netty.Netty;
 import org.java.notification.server.Server;
-import org.java.utils.BeanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,12 +24,10 @@ public abstract class NettyServer implements Server {
 
     private ChannelFuture channelFuture;
 
-    public NettyServer(String name, int port) {
+    public NettyServer(Netty netty, String name, int port) {
         this.name = name;
 
         LOGGER.info("Init <{}> ({})", name, port);
-
-        Netty netty = BeanUtils.bean(Netty.class);
 
         bootstrap = new ServerBootstrap()
                 .group(netty.acceptor(), netty.server())

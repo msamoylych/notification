@@ -7,8 +7,6 @@ import org.java.notification.Entity;
  */
 public class ReceiverSetting extends Entity {
 
-    private String server;
-
     private Type type;
 
     private String host;
@@ -16,14 +14,6 @@ public class ReceiverSetting extends Entity {
     private Integer port;
 
     private String path;
-
-    public String server() {
-        return server;
-    }
-
-    public void server(String server) {
-        this.server = server;
-    }
 
     public Type type() {
         return type;
