@@ -1,5 +1,6 @@
 package org.java.notification.router;
 
+import org.java.notification.Message;
 import org.java.notification.client.SendException;
 import org.java.notification.push.Push;
 import org.java.notification.push.application.Application;
@@ -28,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Router extends SmartLifecycle implements ApplicationContextAware {
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
-    private final Map<Class<? extends Application>, Sender> pushSenders = new HashMap<>();
+    private final Map<Class<? extends Application>, Sender<?>> pushSenders = new HashMap<>();
     private ThreadPoolExecutor executor;
 
     public void route(List<Push<?>> pushes) {
@@ -54,7 +55,6 @@ public class Router extends SmartLifecycle implements ApplicationContextAware {
         return 0;
     }
 
-    @SuppressWarnings("unchecked")
     public void setApplicationContext(ApplicationContext applicationContext) {
         BeanUtils.forEachBeanOfType(applicationContext, Sender.class, sender -> {
             ParameterizedType senderType = (ParameterizedType) GenericUtils.getGenericType(sender);
@@ -90,18 +90,17 @@ public class Router extends SmartLifecycle implements ApplicationContextAware {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public void run() {
             Class<? extends Application> cls = push.application().getClass();
-            Sender sender = pushSenders.get(cls);
+            Sender<? extends Message> sender = pushSenders.get(cls);
             if (sender != null) {
                 try {
-                    sender.send(push);
+                    sender.send((Message) push);
                 } catch (SendException ex) {
                     LOGGER.error("Push <{}> send failed", push.id(), ex);
                 }
             } else {
-                LOGGER.error("Sender for {} not found");
+                LOGGER.error("Sender for {} not found", cls.getSimpleName());
             }
         }
     }

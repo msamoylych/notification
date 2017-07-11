@@ -9,7 +9,6 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import org.java.netty.Netty;
 import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
@@ -24,17 +23,17 @@ import java.util.concurrent.TimeUnit;
 public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
     private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.INFO);
 
-    private ChannelPromise settings;
+    private ChannelPromise negotiation;
 
-    public NettyHttp2Client(Netty netty, HttpClientAdapter<M> adapter) {
-        super(netty, adapter);
+    public NettyHttp2Client(HttpClientAdapter<M> adapter) {
+        super(adapter);
 
         SslContext sslContext = SslContextFactory.buildHttp2SslContext();
 
         bootstrap.handler(new ChannelInitializer<SocketChannel>() {
             @Override
             protected void initChannel(SocketChannel ch) throws Exception {
-                settings = ch.newPromise();
+                negotiation = ch.newPromise();
 
                 ChannelPipeline pipeline = ch.pipeline();
 
@@ -53,13 +52,26 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
                             NettyHttp2ClientHandler<M> connectionHandler = new NettyHttp2ClientHandler.Builder<M>()
                                     .frameLogger(FRAME_LOGGER)
                                     .adapter(new NettyHttp2ClientAdapter<>(adapter))
-                                    .settingsPromise(settings)
                                     .build();
 
                             channelPipeline.addLast(connectionHandler);
+                            negotiation.setSuccess();
                         } else {
+                            negotiation.setFailure(new IllegalStateException("Unsupported protocol: " + protocol));
                             ctx.close();
                         }
+                    }
+
+                    @Override
+                    protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                        negotiation.setFailure(cause);
+                        ctx.close();
+                    }
+
+                    @Override
+                    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+                        negotiation.setFailure(cause);
+                        ctx.close();
                     }
                 });
             }
@@ -76,7 +88,7 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
             if (connect.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS) && connect.isSuccess()) {
                 Channel ch = connect.channel();
 
-                if (settings.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS)) {
+                if (negotiation.awaitUninterruptibly(5_000, TimeUnit.MILLISECONDS) && negotiation.isSuccess()) {
                     ch.closeFuture().addListener(future -> {
                         synchronized (bootstrap) {
                             channel = null;
@@ -87,8 +99,11 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
                     LOGGER.info("{} - connected", adapter);
                     return ch;
                 } else {
-                    ch.close();
-                    throw new NettyException("Wait settings timeout");
+                    if (negotiation.cause() != null) {
+                        throw new NettyException("Negotiation error", negotiation.cause());
+                    } else {
+                        throw new NettyException("Negotiation timeout");
+                    }
                 }
             } else {
                 if (connect.cause() != null) {

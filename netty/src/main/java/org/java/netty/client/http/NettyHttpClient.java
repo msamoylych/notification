@@ -8,7 +8,6 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import org.java.netty.Netty;
 import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
@@ -22,8 +21,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class NettyHttpClient<M extends Message> extends NettyClient<M> {
 
-    public NettyHttpClient(Netty netty, HttpClientAdapter<M> adapter) {
-        super(netty, adapter);
+    public NettyHttpClient(HttpClientAdapter<M> adapter) {
+        super(adapter);
 
         SslContext sslContext = SslContextFactory.buildHttpSslContext();
 

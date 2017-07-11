@@ -30,11 +30,6 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     }
 
     private class NettyHttp2ClientFrameListener extends Http2FrameAdapter {
-        private ChannelPromise settingsPromise;
-
-        public NettyHttp2ClientFrameListener(ChannelPromise settingsPromise) {
-            this.settingsPromise = settingsPromise;
-        }
 
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int streamDependency, short weight, boolean exclusive, int padding, boolean endOfStream) throws Http2Exception {
@@ -63,16 +58,6 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
             }
 
             return bytesProcessed;
-        }
-
-        @Override
-        public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
-            settingsPromise.setSuccess();
-        }
-
-        @Override
-        public void onPingAckRead(ChannelHandlerContext ctx, ByteBuf data) throws Http2Exception {
-            super.onPingAckRead(ctx, data);
         }
 
         @Override
@@ -129,7 +114,6 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     static class Builder<M extends Message> extends AbstractHttp2ConnectionHandlerBuilder<NettyHttp2ClientHandler<M>, Builder<M>> {
 
         private NettyHttp2ClientAdapter<M> adapter;
-        private ChannelPromise settingsPromise;
 
         Builder() {
             server(false);
@@ -137,11 +121,6 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         Builder<M> adapter(NettyHttp2ClientAdapter<M> adapter) {
             this.adapter = adapter;
-            return this;
-        }
-
-        Builder<M> settingsPromise(ChannelPromise settingsPromise) {
-            this.settingsPromise = settingsPromise;
             return this;
         }
 
@@ -158,7 +137,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
         @Override
         protected NettyHttp2ClientHandler<M> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
             NettyHttp2ClientHandler<M> handler = new NettyHttp2ClientHandler<>(decoder, encoder, initialSettings, adapter);
-            frameListener(handler.new NettyHttp2ClientFrameListener(settingsPromise));
+            frameListener(handler.new NettyHttp2ClientFrameListener());
             return handler;
         }
     }

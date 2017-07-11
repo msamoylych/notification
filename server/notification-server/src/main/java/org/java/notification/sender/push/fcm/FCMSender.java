@@ -129,4 +129,9 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
 
         pushStorage.update(push);
     }
+
+    @Override
+    public String toString() {
+        return "FCMSender";
+    }
 }

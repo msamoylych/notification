@@ -12,4 +12,6 @@ public interface ClientAdapter<M extends Message> {
     int port();
 
     void fail(M msg, Throwable th);
+
+    String toString();
 }

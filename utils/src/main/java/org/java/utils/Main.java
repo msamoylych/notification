@@ -16,10 +16,9 @@ public class Main {
     private static ConfigurableApplicationContext context;
 
     public static void main(String[] args) {
-        LOGGER.info("Application starting...");
         try {
             context = new AnnotationConfigApplicationContext(BASE_PACKAGE);
-            Runtime.getRuntime().addShutdownHook(ShutdownHook.INSTANCE);
+            Runtime.getRuntime().addShutdownHook(new ShutdownHook());
             LOGGER.info("Application started");
         } catch (Throwable th) {
             LOGGER.error("Start application error", th);
@@ -28,7 +27,6 @@ public class Main {
     }
 
     private static class ShutdownHook extends Thread {
-        private static final ShutdownHook INSTANCE = new ShutdownHook();
 
         private ShutdownHook() {
             super("shutdown");

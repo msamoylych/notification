@@ -12,21 +12,33 @@ import org.java.notification.client.ClientAdapter;
 import org.java.notification.client.SendException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 /**
  * Created by msamoylych on 04.04.2017.
  */
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public abstract class NettyClient<M extends Message> implements Client<M> {
     protected final Logger LOGGER = LoggerFactory.getLogger(NettyClient.class);
+
+    @Autowired
+    @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
+    private Netty netty;
 
     protected final ClientAdapter<M> adapter;
 
     protected final Bootstrap bootstrap;
     protected volatile Channel channel;
 
-    public NettyClient(Netty netty, ClientAdapter<M> adapter) {
-        this.adapter = adapter;
+    public NettyClient(ClientAdapter<M> clientAdapter) {
+        assert netty.isRunning();
+        assert clientAdapter != null;
 
+        adapter = clientAdapter;
         bootstrap = new Bootstrap()
                 .group(netty.client())
                 .remoteAddress(adapter.host(), adapter.port())
@@ -45,7 +57,7 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
                 }
             });
         } catch (NettyException ex) {
-            throw new SendException("Send failed", ex);
+            throw new SendException("Send error", ex);
         }
     }
 
