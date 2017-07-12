@@ -103,4 +103,8 @@ public class AdminHttpServerHandler implements HttpServerHandler {
         response.header(Header.CONTENT_TYPE, ContentType.contentType(path));
         response.header(Header.CACHE_CONTROL, CACHE);
     }
+
+    public String toString() {
+        return "AdminHandler";
+    }
 }

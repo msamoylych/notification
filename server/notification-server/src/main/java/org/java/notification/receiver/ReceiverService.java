@@ -5,9 +5,9 @@ import org.java.notification.push.Push;
 import org.java.notification.push.PushStorage;
 import org.java.notification.push.application.Application;
 import org.java.notification.receiver.model.PushModel;
-import org.java.notification.receiver.model.ResultModel;
+import org.java.notification.receiver.model.RequestModel;
+import org.java.notification.receiver.model.ResponseModel;
 import org.java.notification.router.Router;
-import org.java.notification.storage.StorageException;
 import org.java.notification.user.System;
 import org.java.notification.user.SystemStorage;
 import org.java.utils.StringUtils;
@@ -29,10 +29,10 @@ public class ReceiverService {
 
     private static final Random RND = new Random();
 
-    private static final ResultModel UNDEFINED_SYSTEM_CODE = new ResultModel("undefined-system-code");
-    private static final ResultModel INVALID_SYSTEM_CODE = new ResultModel("invalid-system-code");
-    private static final ResultModel SYSTEM_LOCKED = new ResultModel("system-locked");
-    private static final ResultModel DUPLICATE_PUSH = new ResultModel("duplicate-push");
+    private static final ResponseModel UNDEFINED_SYSTEM_CODE = new ResponseModel("undefined-system-code");
+    private static final ResponseModel INVALID_SYSTEM_CODE = new ResponseModel("invalid-system-code");
+    private static final ResponseModel SYSTEM_LOCKED = new ResponseModel("system-locked");
+    private static final ResponseModel PUSHES_EMPTY = new ResponseModel("pushes-empty");
 
     private final SystemStorage systemStorage;
     private final ApplicationStorage applicationStorage;
@@ -48,81 +48,81 @@ public class ReceiverService {
     }
 
     @SuppressWarnings("unchecked")
-    public ResultModel receive(String systemCode, List<PushModel> pushModels) {
-        if (StringUtils.isEmpty(systemCode)) {
-            LOGGER.error("System code not specified");
-            return UNDEFINED_SYSTEM_CODE;
-        }
-
-        System system = systemStorage.system(systemCode);
-        if (system == null) {
-            LOGGER.error("System with code <{}> not found", systemCode);
-            return INVALID_SYSTEM_CODE;
-        }
-        if (system.locked()) {
-            LOGGER.error("{} is locked", system);
-            return SYSTEM_LOCKED;
-        }
-
-        LOGGER.info("Received {} push(es) from {}", pushModels.size(), system.name());
-
-        List<Push<?>> pushes = new ArrayList<>(pushModels.size());
-        List<ResultModel.Result> results = new ArrayList<>(pushModels.size());
-        for (PushModel pushModel : pushModels) {
-            ResultModel.Result result = new ResultModel.Result();
-            results.add(result);
-            result.id = pushModel.id;
-
-            if (!checkPushModel(pushModel)) {
-                result.error = "invalid-push";
-                continue;
-            }
-
-            Application application = applicationStorage.application(system.id(), pushModel.pns, pushModel.packageName);
-            if (application == null) {
-                LOGGER.error("{}: application not found", pushModel);
-                result.error = "application-not-found";
-                continue;
-            }
-
-            Push push = new Push();
-            pushes.add(push);
-            push.system(system);
-            push.extId(pushModel.id);
-            push.application(application);
-
-            push.token(pushModel.token);
-
-            push.title(pushModel.title);
-            push.body(pushModel.body);
-            push.icon(pushModel.icon);
-        }
-
+    public ResponseModel receive(RequestModel request) {
         try {
+            String systemCode = request.systemCode;
+            if (StringUtils.isEmpty(systemCode)) {
+                LOGGER.error("System code not specified");
+                return UNDEFINED_SYSTEM_CODE;
+            }
+
+            System system = systemStorage.system(systemCode);
+            if (system == null) {
+                LOGGER.error("System with code <{}> not found", systemCode);
+                return INVALID_SYSTEM_CODE;
+            }
+            if (system.locked()) {
+                LOGGER.error("{} is locked", system);
+                return SYSTEM_LOCKED;
+            }
+
+            List<PushModel> pushModels = request.pushes;
+
+            if (pushModels == null || pushModels.isEmpty()) {
+                LOGGER.error("Pushes empty");
+                return PUSHES_EMPTY;
+            }
+
+            LOGGER.info("Received {} push(es) from {}", pushModels.size(), system.name());
+
+            List<Push<?>> pushes = new ArrayList<>(pushModels.size());
+            List<ResponseModel.Result> results = new ArrayList<>(pushModels.size());
+            for (PushModel pushModel : pushModels) {
+                ResponseModel.Result result = new ResponseModel.Result(pushModel.id);
+                results.add(result);
+
+                if (!checkPushModel(pushModel)) {
+                    result.error = "invalid-push";
+                    continue;
+                }
+
+                Application application = applicationStorage.application(system.id(), pushModel.pns, pushModel.packageName);
+                if (application == null) {
+                    LOGGER.error("{}: application not found", pushModel);
+                    result.error = "application-not-found";
+                    continue;
+                }
+
+                Push push = new Push();
+                pushes.add(push);
+                push.system(system);
+                push.extId(pushModel.id);
+                push.application(application);
+
+                push.token(pushModel.token);
+
+                push.title(pushModel.title);
+                push.body(pushModel.body);
+                push.icon(pushModel.icon);
+            }
+
             pushStorage.save(pushes);
-        } catch (StorageException ex) {
-            if (ex.isConstraintViolation()) {
-                LOGGER.error(ex.getMessage(), ex);
-                return DUPLICATE_PUSH;
-            } else {
-                int err = RND.nextInt(1000000);
-                LOGGER.error("Error #{} occurred", err, ex);
-                return new ResultModel("error-#" + err);
+
+            Iterator<Push<?>> itr = pushes.iterator();
+            for (ResponseModel.Result result : results) {
+                if (result.error == null) {
+                    result.msgId = itr.next().id();
+                }
             }
+
+            router.route(pushes);
+
+            return new ResponseModel(results);
+        } catch (Throwable th) {
+            int err = RND.nextInt(1000000);
+            LOGGER.error("Error #{} occurred", err, th);
+            return new ResponseModel("error-#" + err);
         }
-
-        Iterator<Push<?>> itr = pushes.iterator();
-        for (ResultModel.Result result : results) {
-            if (result.error == null) {
-                result.msgId = itr.next().id();
-            }
-        }
-
-        router.route(pushes);
-
-        ResultModel resultModel = new ResultModel();
-        resultModel.results = results;
-        return resultModel;
     }
 
     private boolean checkPushModel(PushModel pushModel) {

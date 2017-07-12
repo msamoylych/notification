@@ -104,11 +104,14 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                         push.pnsError(error);
                         LOGGER.error("{} - pns error: {}", push, error);
                     }
+                } else {
+                    push.state(State.FAILED);
+                    LOGGER.error("{} - invalid response\n{}", push, content);
                 }
                 break;
             case BAD_REQUEST:
                 push.state(State.FAILED);
-                LOGGER.error("{} - invalid request", push);
+                LOGGER.error("{} - invalid request\n{}", push, content(push));
                 break;
             case UNAUTHORIZED:
                 push.state(State.FAILED);

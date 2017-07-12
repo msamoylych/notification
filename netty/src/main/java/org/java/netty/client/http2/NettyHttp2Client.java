@@ -9,6 +9,7 @@ import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
+import org.java.netty.Netty;
 import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
@@ -21,12 +22,12 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 04.04.2017.
  */
 public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
-    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.INFO);
+    private static final Http2FrameLogger FRAME_LOGGER = new Http2FrameLogger(LogLevel.DEBUG);
 
     private ChannelPromise negotiation;
 
-    public NettyHttp2Client(HttpClientAdapter<M> adapter) {
-        super(adapter);
+    public NettyHttp2Client(Netty netty, HttpClientAdapter<M> clientAdapter) {
+        super(netty, clientAdapter);
 
         SslContext sslContext = SslContextFactory.buildHttp2SslContext();
 
@@ -51,27 +52,25 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
 
                             NettyHttp2ClientHandler<M> connectionHandler = new NettyHttp2ClientHandler.Builder<M>()
                                     .frameLogger(FRAME_LOGGER)
-                                    .adapter(new NettyHttp2ClientAdapter<>(adapter))
+                                    .adapter(new NettyHttp2ClientAdapter<>((HttpClientAdapter<M>) adapter))
                                     .build();
 
                             channelPipeline.addLast(connectionHandler);
+
                             negotiation.setSuccess();
                         } else {
                             negotiation.setFailure(new IllegalStateException("Unsupported protocol: " + protocol));
-                            ctx.close();
                         }
                     }
 
                     @Override
                     protected void handshakeFailure(ChannelHandlerContext ctx, Throwable cause) throws Exception {
                         negotiation.setFailure(cause);
-                        ctx.close();
                     }
 
                     @Override
                     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
                         negotiation.setFailure(cause);
-                        ctx.close();
                     }
                 });
             }
@@ -99,6 +98,7 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
                     LOGGER.info("{} - connected", adapter);
                     return ch;
                 } else {
+                    ch.close();
                     if (negotiation.cause() != null) {
                         throw new NettyException("Negotiation error", negotiation.cause());
                     } else {

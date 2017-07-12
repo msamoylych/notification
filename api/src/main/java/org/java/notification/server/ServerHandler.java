@@ -6,4 +6,6 @@ package org.java.notification.server;
 public interface ServerHandler<REQ extends Request, RES extends Response> {
 
     void handle(REQ request, RES response);
+
+    String toString();
 }

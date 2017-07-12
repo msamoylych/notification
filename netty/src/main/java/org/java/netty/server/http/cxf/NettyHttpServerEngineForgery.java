@@ -1,4 +1,4 @@
-package org.java.netty.server.cxf;
+package org.java.netty.server.http.cxf;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.BusFactory;
@@ -6,13 +6,11 @@ import org.apache.cxf.configuration.jsse.TLSServerParameters;
 import org.apache.cxf.transport.http.netty.server.NettyHttpServerEngine;
 import org.apache.cxf.transport.http.netty.server.NettyHttpServerEngineFactory;
 import org.apache.cxf.transport.http.netty.server.ThreadingParameters;
-import org.java.netty.Netty;
+import org.java.netty.NettyFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -20,34 +18,20 @@ import java.util.Map;
  * Created by msamoylych on 26.05.2017.
  */
 @Component
-public class NettyHttpServerEngineForgery implements InitializingBean {
-
-    @Autowired
-    @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
-    private Netty netty;
+public class NettyHttpServerEngineForgery extends NettyFactory implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        Bus bus = BusFactory.getDefaultBus();
+        Bus bus = BusFactory.getThreadDefaultBus();
         NettyHttpServerEngineFactory engineFactory = bus.getExtension(NettyHttpServerEngineFactory.class);
         bus.setExtension(new NettyHttpServerEngineFactoryDelegate(engineFactory), NettyHttpServerEngineFactory.class);
     }
 
     private class NettyHttpServerEngineFactoryDelegate extends NettyHttpServerEngineFactory {
-        private NettyHttpServerEngineFactory engineFactory;
+        private final NettyHttpServerEngineFactory engineFactory;
 
         private NettyHttpServerEngineFactoryDelegate(NettyHttpServerEngineFactory engineFactory) {
-            assert engineFactory != null;
             this.engineFactory = engineFactory;
-        }
-
-        @Override
-        public NettyHttpServerEngine createNettyHttpServerEngine(String host, int port, String protocol) throws IOException {
-            NettyHttpServerEngine engine = new NettyHttpServerEngine(host, port);
-            engine.setBossGroup(netty.acceptor());
-            engine.setWorkerGroup(netty.server());
-            engineFactory.setEnginesList(Collections.singletonList(engine));
-            return engine;
         }
 
         @Override
@@ -98,6 +82,21 @@ public class NettyHttpServerEngineForgery implements InitializingBean {
         @Override
         public NettyHttpServerEngine retrieveNettyHttpServerEngine(int port) {
             return engineFactory.retrieveNettyHttpServerEngine(port);
+        }
+
+        @Override
+        public NettyHttpServerEngine createNettyHttpServerEngine(String host, int port, String protocol) throws IOException {
+            NettyHttpServerEngine engine = engineFactory.createNettyHttpServerEngine(host, port, protocol);
+            if (engine.getBossGroup() == null) {
+                engine.setBossGroup(netty.acceptor());
+            }
+            if (engine.getWorkerGroup() == null) {
+                engine.setWorkerGroup(netty.server());
+            }
+            if (engine.getApplicationExecutor() == null) {
+                engine.setApplicationExecutor(netty.executor());
+            }
+            return engine;
         }
 
         @Override

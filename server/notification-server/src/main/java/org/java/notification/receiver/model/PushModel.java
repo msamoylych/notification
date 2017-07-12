@@ -14,22 +14,17 @@ public class PushModel {
     @XmlElement(required = true)
     public String id;
 
-    @XmlElement
     public PNS pns;
 
     @XmlElement(name = "package")
     public String packageName;
 
-    @XmlElement
     public String token;
 
-    @XmlElement
     public String title;
 
-    @XmlElement
     public String body;
 
-    @XmlElement
     public String icon;
 
     @Override

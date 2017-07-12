@@ -51,7 +51,7 @@ class NettyHttp2ClientAdapter<M extends Message> {
             case POST:
                 return HttpMethod.POST.asciiName();
             default:
-                throw new IllegalStateException("Unknown method: " + adapter.method());
+                throw new IllegalStateException("Unsupported method: " + adapter.method());
         }
     }
 

@@ -1,6 +1,5 @@
 package org.java.notification.router;
 
-import org.java.notification.Message;
 import org.java.notification.client.SendException;
 import org.java.notification.push.Push;
 import org.java.notification.push.application.Application;
@@ -29,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Router extends SmartLifecycle implements ApplicationContextAware {
     private static final Logger LOGGER = LoggerFactory.getLogger(Router.class);
 
-    private final Map<Class<? extends Application>, Sender<?>> pushSenders = new HashMap<>();
+    private final Map<Class<? extends Application>, Sender<Push<?>>> pushSenders = new HashMap<>();
     private ThreadPoolExecutor executor;
 
     public void route(List<Push<?>> pushes) {
@@ -55,6 +54,7 @@ public class Router extends SmartLifecycle implements ApplicationContextAware {
         return 0;
     }
 
+    @SuppressWarnings("unchecked")
     public void setApplicationContext(ApplicationContext applicationContext) {
         BeanUtils.forEachBeanOfType(applicationContext, Sender.class, sender -> {
             ParameterizedType senderType = (ParameterizedType) GenericUtils.getGenericType(sender);
@@ -65,12 +65,26 @@ public class Router extends SmartLifecycle implements ApplicationContextAware {
         });
     }
 
-    private static class RouterThreadFactory implements ThreadFactory {
-        private static final AtomicInteger num = new AtomicInteger(1);
+    private class PushRouterTask implements Runnable {
+        private final Push<?> push;
+
+        private PushRouterTask(Push<?> push) {
+            this.push = push;
+        }
 
         @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(r, "router-" + num.getAndIncrement());
+        public void run() {
+            Class<? extends Application> cls = push.application().getClass();
+            Sender<Push<?>> sender = pushSenders.get(cls);
+            if (sender != null) {
+                try {
+                    sender.send(push);
+                } catch (SendException ex) {
+                    LOGGER.error("{} send failed", push, ex);
+                }
+            } else {
+                LOGGER.error("Sender for {} not found", cls.getSimpleName());
+            }
         }
     }
 
@@ -81,27 +95,12 @@ public class Router extends SmartLifecycle implements ApplicationContextAware {
         }
     }
 
-    private class PushRouterTask implements Runnable {
-
-        private final Push<?> push;
-
-        PushRouterTask(Push<?> push) {
-            this.push = push;
-        }
+    private static class RouterThreadFactory implements ThreadFactory {
+        private static final AtomicInteger num = new AtomicInteger(1);
 
         @Override
-        public void run() {
-            Class<? extends Application> cls = push.application().getClass();
-            Sender<? extends Message> sender = pushSenders.get(cls);
-            if (sender != null) {
-                try {
-                    sender.send((Message) push);
-                } catch (SendException ex) {
-                    LOGGER.error("Push <{}> send failed", push.id(), ex);
-                }
-            } else {
-                LOGGER.error("Sender for {} not found", cls.getSimpleName());
-            }
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "router-" + num.getAndIncrement());
         }
     }
 }
