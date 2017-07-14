@@ -85,6 +85,9 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                 .add("body", push.body())
                 .add("icon", push.icon())
                 .endObject()
+                .startObject("data")
+                .add("msgId", push.id())
+                .endObject()
                 .end();
     }
 

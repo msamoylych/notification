@@ -7,7 +7,7 @@ import org.java.notification.Entity;
  */
 public class ReceiverSetting extends Entity {
 
-    private Type type;
+    private String type;
 
     private String host;
 
@@ -15,11 +15,11 @@ public class ReceiverSetting extends Entity {
 
     private String path;
 
-    public Type type() {
+    public String type() {
         return type;
     }
 
-    public void type(Type type) {
+    public void type(String type) {
         this.type = type;
     }
 
@@ -45,10 +45,5 @@ public class ReceiverSetting extends Entity {
 
     public void path(String path) {
         this.path = path;
-    }
-
-    public enum Type {
-        WS,
-        RS
     }
 }

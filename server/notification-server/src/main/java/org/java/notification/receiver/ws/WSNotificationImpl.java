@@ -3,8 +3,6 @@ package org.java.notification.receiver.ws;
 import org.java.notification.receiver.ReceiverService;
 import org.java.notification.receiver.model.RequestModel;
 import org.java.notification.receiver.model.ResponseModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.annotation.Resource;
 import javax.jws.WebService;
@@ -22,7 +20,6 @@ import javax.xml.ws.soap.SOAPBinding;
         endpointInterface = "org.java.notification.receiver.ws.WSNotification")
 @BindingType(SOAPBinding.SOAP12HTTP_BINDING)
 public class WSNotificationImpl implements WSNotification {
-    private static final Logger LOGGER = LoggerFactory.getLogger(WSNotification.class);
 
     @Resource
     private WebServiceContext context;
@@ -31,15 +28,12 @@ public class WSNotificationImpl implements WSNotification {
 
     @Override
     public ResponseModel send(RequestModel request) {
-        logIP();
-        return receiverService.receive(request);
+        return receiverService.receive(httpServletRequest(), request);
     }
 
-    private void logIP() {
+    private HttpServletRequest httpServletRequest() {
         MessageContext messageContext = context.getMessageContext();
-        HttpServletRequest httpServletRequest = (HttpServletRequest) messageContext.get(MessageContext.SERVLET_REQUEST);
-        String ip = httpServletRequest.getRemoteAddr();
-        LOGGER.info("Request {}", ip);
+        return (HttpServletRequest) messageContext.get(MessageContext.SERVLET_REQUEST);
     }
 
     void setReceiverService(ReceiverService receiverService) {

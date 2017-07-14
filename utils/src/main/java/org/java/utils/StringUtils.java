@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
  */
 public final class StringUtils {
 
+    public static final String DEFAULT_ENCODING = "UTF-8";
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     public static String toString(byte[] bytes) {

@@ -8,8 +8,6 @@ import org.java.notification.setting.ReceiverStorage;
 import org.java.notification.storage.StorageException;
 import org.java.utils.BeanUtils;
 import org.java.utils.lifecycle.SmartLifecycle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -22,14 +20,16 @@ import java.util.List;
  * Created by msamoylych on 25.05.2017.
  */
 @Service
+@SuppressWarnings("unused")
 public class NotificationServer extends SmartLifecycle implements ApplicationContextAware {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NotificationServer.class);
 
     private final List<Sender> senders = new ArrayList<>();
     private final List<Receiver> receivers = new ArrayList<>();
 
     private ClientFactory clientFactory;
     private ReceiverStorage receiverStorage;
+
+    private ApplicationContext applicationContext;
 
     public NotificationServer(ClientFactory clientFactory, ReceiverStorage receiverStorage) {
         this.clientFactory = clientFactory;
@@ -43,33 +43,31 @@ public class NotificationServer extends SmartLifecycle implements ApplicationCon
     }
 
     private void startSenders() {
-        for (Sender sender : senders) {
+        BeanUtils.forEachBeanOfType(applicationContext, Sender.class, sender -> {
             sender.start(clientFactory);
-        }
+            senders.add(sender);
+        });
     }
 
     private void startReceivers() throws StorageException {
         List<ReceiverSetting> receiverSettings = receiverStorage.getReceivers();
-
-        for (Receiver receiver : receivers) {
-            ReceiverSetting setting = null;
-
-            for (ReceiverSetting receiverSetting : receiverSettings) {
-                if (receiverSetting.type() == receiver.type()) {
-                    setting = receiverSetting;
-                    break;
-                }
-            }
-
-            if (setting != null) {
-                receiver.start(setting);
-            }
-        }
+        receiverSettings.forEach(receiverSetting -> {
+            Receiver receiver = applicationContext.getBean(receiverSetting.type(), Receiver.class);
+            receiver.start(receiverSetting);
+            receivers.add(receiver);
+        });
     }
 
     @Override
     protected void doStop() {
         stopReceivers();
+        stopSenders();
+    }
+
+    private void stopSenders() {
+        for (Sender sender : senders) {
+
+        }
     }
 
     private void stopReceivers() {
@@ -85,7 +83,6 @@ public class NotificationServer extends SmartLifecycle implements ApplicationCon
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        senders.addAll(BeanUtils.beansOfType(applicationContext, Sender.class));
-        receivers.addAll(BeanUtils.beansOfType(applicationContext, Receiver.class));
+        this.applicationContext = applicationContext;
     }
 }

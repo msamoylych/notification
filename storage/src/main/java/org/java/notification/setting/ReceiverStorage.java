@@ -7,8 +7,6 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.java.notification.setting.ReceiverSetting.Type;
-
 /**
  * Created by msamoylych on 25.05.2017.
  */
@@ -23,7 +21,7 @@ public class ReceiverStorage extends Storage {
             while (rs.next()) {
                 ReceiverSetting setting = new ReceiverSetting();
                 setting.id(rs.getLong());
-                setting.type(rs.getEnum(Type.class));
+                setting.type(rs.getString());
                 setting.host(rs.getString());
                 setting.port(rs.getInt());
                 setting.path(rs.getString());

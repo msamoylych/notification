@@ -1,17 +1,21 @@
 package org.java.notification.receiver.model;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import javax.xml.bind.annotation.*;
 import java.util.List;
 
 /**
  * Created by msamoylych on 12.07.2017.
  */
+@XmlAccessorType(XmlAccessType.FIELD)
+@XmlType(name = "", propOrder = {"system", "pushes"})
 @XmlRootElement(name = "request")
 public class RequestModel {
 
-    @XmlElement(name = "system")
-    public String systemCode;
+    public String system;
 
+    @XmlElement(name = "push")
+    @JsonProperty("pushes")
     public List<PushModel> pushes;
 }

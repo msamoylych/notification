@@ -13,7 +13,7 @@ import javax.xml.ws.Endpoint;
 /**
  * Created by msamoylych on 24.05.2017.
  */
-@Component
+@Component("WS")
 @SuppressWarnings("unused")
 public class WSReceiver implements Receiver {
     private static final Logger LOGGER = LoggerFactory.getLogger(WSReceiver.class);
@@ -24,11 +24,6 @@ public class WSReceiver implements Receiver {
         WSNotificationImpl implementor = new WSNotificationImpl();
         implementor.setReceiverService(receiverService);
         endpoint = Endpoint.create(implementor);
-    }
-
-    @Override
-    public ReceiverSetting.Type type() {
-        return ReceiverSetting.Type.WS;
     }
 
     @Override

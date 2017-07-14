@@ -9,8 +9,6 @@ import org.springframework.stereotype.Service;
 @Service
 public interface Receiver {
 
-    ReceiverSetting.Type type();
-
     void start(ReceiverSetting setting);
 
     void stop();

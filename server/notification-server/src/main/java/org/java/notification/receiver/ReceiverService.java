@@ -8,6 +8,7 @@ import org.java.notification.receiver.model.PushModel;
 import org.java.notification.receiver.model.RequestModel;
 import org.java.notification.receiver.model.ResponseModel;
 import org.java.notification.router.Router;
+import org.java.notification.storage.StorageException;
 import org.java.notification.user.System;
 import org.java.notification.user.SystemStorage;
 import org.java.utils.StringUtils;
@@ -15,10 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 /**
  * Created by msamoylych on 22.06.2017.
@@ -32,7 +31,8 @@ public class ReceiverService {
     private static final ResponseModel UNDEFINED_SYSTEM_CODE = new ResponseModel("undefined-system-code");
     private static final ResponseModel INVALID_SYSTEM_CODE = new ResponseModel("invalid-system-code");
     private static final ResponseModel SYSTEM_LOCKED = new ResponseModel("system-locked");
-    private static final ResponseModel PUSHES_EMPTY = new ResponseModel("pushes-empty");
+    private static final ResponseModel EMPTY_REQUEST = new ResponseModel("empty-request");
+    private static final ResponseModel DUPLICATE_PUSH = new ResponseModel("duplicate-push");
 
     private final SystemStorage systemStorage;
     private final ApplicationStorage applicationStorage;
@@ -48,33 +48,41 @@ public class ReceiverService {
     }
 
     @SuppressWarnings("unchecked")
-    public ResponseModel receive(RequestModel request) {
+    public ResponseModel receive(HttpServletRequest httpServletRequest, RequestModel request) {
+        String remoteHost = httpServletRequest.getRemoteHost();
+        String remoteAddr = httpServletRequest.getRemoteAddr();
+        if (Objects.equals(remoteHost, remoteAddr)) {
+            LOGGER.info("Request from {}", remoteHost);
+        } else {
+            LOGGER.info("Request from {} ({})", remoteHost, remoteAddr);
+        }
+
+        String systemCode = request.system;
+        if (StringUtils.isEmpty(systemCode)) {
+            LOGGER.error("System code not specified");
+            return UNDEFINED_SYSTEM_CODE;
+        }
+
+        System system = systemStorage.system(systemCode);
+        if (system == null) {
+            LOGGER.error("System with code <{}> not found", systemCode);
+            return INVALID_SYSTEM_CODE;
+        }
+        if (system.locked()) {
+            LOGGER.error("{} is locked", system);
+            return SYSTEM_LOCKED;
+        }
+
+        List<PushModel> pushModels = request.pushes;
+
+        if (pushModels == null || pushModels.isEmpty()) {
+            LOGGER.error("Empty request");
+            return EMPTY_REQUEST;
+        }
+
+        LOGGER.info("Received {} push(es) from {}", pushModels.size(), system.name());
+
         try {
-            String systemCode = request.systemCode;
-            if (StringUtils.isEmpty(systemCode)) {
-                LOGGER.error("System code not specified");
-                return UNDEFINED_SYSTEM_CODE;
-            }
-
-            System system = systemStorage.system(systemCode);
-            if (system == null) {
-                LOGGER.error("System with code <{}> not found", systemCode);
-                return INVALID_SYSTEM_CODE;
-            }
-            if (system.locked()) {
-                LOGGER.error("{} is locked", system);
-                return SYSTEM_LOCKED;
-            }
-
-            List<PushModel> pushModels = request.pushes;
-
-            if (pushModels == null || pushModels.isEmpty()) {
-                LOGGER.error("Pushes empty");
-                return PUSHES_EMPTY;
-            }
-
-            LOGGER.info("Received {} push(es) from {}", pushModels.size(), system.name());
-
             List<Push<?>> pushes = new ArrayList<>(pushModels.size());
             List<ResponseModel.Result> results = new ArrayList<>(pushModels.size());
             for (PushModel pushModel : pushModels) {
@@ -119,9 +127,14 @@ public class ReceiverService {
 
             return new ResponseModel(results);
         } catch (Throwable th) {
-            int err = RND.nextInt(1000000);
-            LOGGER.error("Error #{} occurred", err, th);
-            return new ResponseModel("error-#" + err);
+            if (th instanceof StorageException && ((StorageException) th).isConstraintViolation()) {
+                LOGGER.error(th.getMessage(), th);
+                return DUPLICATE_PUSH;
+            } else {
+                int err = RND.nextInt(1000000);
+                LOGGER.error("Error #{} occurred", err, th);
+                return new ResponseModel("error-#" + err);
+            }
         }
     }
 
