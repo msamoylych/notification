@@ -6,7 +6,7 @@ import java.lang.reflect.Type;
 /**
  * Created by msamoylych on 27.06.2017.
  */
-public class GenericUtils {
+public final class GenericUtils {
 
     public static Type getGenericType(Object o) {
         return getGenericType(o.getClass());

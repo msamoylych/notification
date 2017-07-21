@@ -3,7 +3,7 @@ package org.java.utils;
 /**
  * Created by msamoylych on 28.04.2017.
  */
-public class Length {
+public final class Length {
 
     public static final int L32 = 32;
     public static final int L64 = 64;

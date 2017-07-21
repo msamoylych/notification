@@ -128,7 +128,7 @@ public class ReceiverService {
             return new ResponseModel(results);
         } catch (Throwable th) {
             if (th instanceof StorageException && ((StorageException) th).isConstraintViolation()) {
-                LOGGER.error(th.getMessage(), th);
+                LOGGER.error("Constraint violation");
                 return DUPLICATE_PUSH;
             } else {
                 int err = RND.nextInt(1000000);

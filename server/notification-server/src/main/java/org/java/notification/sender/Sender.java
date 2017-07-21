@@ -1,7 +1,6 @@
 package org.java.notification.sender;
 
 import org.java.notification.Message;
-import org.java.notification.client.ClientFactory;
 import org.java.notification.client.SendException;
 import org.springframework.stereotype.Service;
 
@@ -10,8 +9,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public interface Sender<M extends Message> {
-
-    void start(ClientFactory clientFactory);
 
     void send(M msg) throws SendException;
 }

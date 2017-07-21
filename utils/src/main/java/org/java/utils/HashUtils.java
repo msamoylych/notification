@@ -8,7 +8,7 @@ import java.util.Random;
 /**
  * Created by msamoylych on 27.04.2017.
  */
-public class HashUtils {
+public final class HashUtils {
 
     private static final Random RND = new SecureRandom();
 

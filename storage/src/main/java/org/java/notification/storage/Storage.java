@@ -1,11 +1,8 @@
 package org.java.notification.storage;
 
 import oracle.jdbc.OracleConnection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.java.utils.provider.DataSourceProvider;
 
-import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Objects;
 
@@ -13,18 +10,13 @@ import java.util.Objects;
  * Created by msamoylych on 06.06.2017.
  */
 public abstract class Storage {
-    private static final Logger LOGGER = LoggerFactory.getLogger(Storage.class);
-
-    @Autowired
-    @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
-    private DataSource dataSource;
 
     protected void withStatement(String sql) throws StorageException {
         withStatement(sql, null);
     }
 
     protected <R> R withStatement(String sql, Function<R> parse) throws StorageException {
-        try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = DataSourceProvider.DATA_SOURCE.getConnection()) {
             try (Statement st = connection.createStatement()) {
                 if (parse != null) {
                     try (ResultSet rs = st.executeQuery(sql)) {
@@ -40,7 +32,7 @@ public abstract class Storage {
         }
     }
 
-    protected void withPreparedStatement(String sql, Consumer<PreparedStatementWrapper> prepare) throws StorageException {
+    protected void withPreparedStatement(String sql, Consumer<PreparedStatementWrapper<?>> prepare) throws StorageException {
         withPreparedStatement(sql, prepare, null);
     }
 
@@ -48,8 +40,8 @@ public abstract class Storage {
         return withPreparedStatement(sql, null, parse);
     }
 
-    protected <R> R withPreparedStatement(String sql, Consumer<PreparedStatementWrapper> prepare, Function<R> parse) throws StorageException {
-        try (Connection connection = dataSource.getConnection()) {
+    protected <R> R withPreparedStatement(String sql, Consumer<PreparedStatementWrapper<?>> prepare, Function<R> parse) throws StorageException {
+        try (Connection connection = DataSourceProvider.DATA_SOURCE.getConnection()) {
             try (PreparedStatement st = connection.prepareStatement(sql)) {
                 if (prepare != null) {
                     prepare.accept(new PreparedStatementWrapper<>(st));
@@ -69,8 +61,8 @@ public abstract class Storage {
         }
     }
 
-    protected void withCallableStatement(String sql, Consumer<CallableStatementWrapper> prepare, Consumer<CallableStatementWrapper> parse) throws StorageException {
-        try (Connection connection = dataSource.getConnection()) {
+    protected void withCallableStatement(String sql, Consumer<CallableStatementWrapper<?>> prepare, Consumer<CallableStatementWrapper<?>> parse) throws StorageException {
+        try (Connection connection = DataSourceProvider.DATA_SOURCE.getConnection()) {
             try (CallableStatement st = connection.prepareCall(sql)) {
                 CallableStatementWrapper<CallableStatement> wrapper = new CallableStatementWrapper<>(st);
                 prepare.accept(wrapper);
@@ -83,7 +75,7 @@ public abstract class Storage {
     }
 
     @FunctionalInterface
-    protected interface Consumer<T> {
+    protected interface Consumer<T extends StatementWrapper<?>> {
         void accept(T st) throws SQLException;
     }
 

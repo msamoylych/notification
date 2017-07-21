@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 /**
  * Created by msamoylych on 20.04.2017.
  */
-public class IOUtils {
+public final class IOUtils {
     private static final Logger LOGGER = LoggerFactory.getLogger(IOUtils.class);
 
     private static final int BUFFER_SIZE = 1024 * 4;

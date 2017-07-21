@@ -10,10 +10,6 @@ import org.java.utils.http.Status;
  */
 public interface HttpClientAdapter<M extends Message> extends ClientAdapter<M> {
 
-    default boolean http2() {
-        return false;
-    }
-
     String path();
 
     Method method();

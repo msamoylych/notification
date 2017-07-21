@@ -28,9 +28,9 @@ public class WSReceiver implements Receiver {
 
     @Override
     public void start(ReceiverSetting setting) {
-        String address = "http://" + setting.host() + ":" + setting.port() + "/" + StringUtils.notNull(setting.path());
+        String address = "http://0.0.0.0:" + setting.port() + "/" + StringUtils.notNull(setting.path());
         endpoint.publish(address);
-        LOGGER.info("Receiver started on {}", address);
+        LOGGER.info("Started on {}", address);
     }
 
     @Override

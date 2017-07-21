@@ -14,7 +14,7 @@ import org.java.netty.NettyException;
 import org.java.netty.SslContextFactory;
 import org.java.netty.client.NettyClient;
 import org.java.notification.Message;
-import org.java.notification.client.http.HttpClientAdapter;
+import org.java.notification.client.http.Http2ClientAdapter;
 
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +26,7 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
 
     private ChannelPromise negotiation;
 
-    public NettyHttp2Client(Netty netty, HttpClientAdapter<M> clientAdapter) {
+    public NettyHttp2Client(Netty netty, Http2ClientAdapter<M> clientAdapter) {
         super(netty, clientAdapter);
 
         SslContext sslContext = SslContextFactory.buildHttp2SslContext();
@@ -52,7 +52,7 @@ public class NettyHttp2Client<M extends Message> extends NettyClient<M> {
 
                             NettyHttp2ClientHandler<M> connectionHandler = new NettyHttp2ClientHandler.Builder<M>()
                                     .frameLogger(FRAME_LOGGER)
-                                    .adapter(new NettyHttp2ClientAdapter<>((HttpClientAdapter<M>) adapter))
+                                    .adapter(new NettyHttp2ClientAdapter<>((Http2ClientAdapter<M>) adapter))
                                     .build();
 
                             channelPipeline.addLast(connectionHandler);

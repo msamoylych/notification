@@ -11,10 +11,10 @@ import org.java.notification.client.SendException;
  */
 public abstract class AbstractSender<M extends Message> implements Sender<M>, ClientAdapter<M> {
 
-    private Client<M> client;
+    private final Client<M> client;
 
-    public void start(ClientFactory clientFactory) {
-        client = clientFactory.createClient(this);
+    public AbstractSender(ClientFactory clientFactory) {
+        this.client = clientFactory.createClient(this);
     }
 
     @Override

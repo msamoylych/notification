@@ -8,7 +8,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 /**
  * Created by msamoylych on 20.04.2017.
  */
-public class Main {
+public final class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
     private static final String BASE_PACKAGE = "org.java";
@@ -17,9 +17,12 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            LOGGER.info("Application starting...");
+            long start = System.currentTimeMillis();
+            Settings.init();
             context = new AnnotationConfigApplicationContext(BASE_PACKAGE);
             Runtime.getRuntime().addShutdownHook(new ShutdownHook());
-            LOGGER.info("Application started");
+            LOGGER.info("Application started in {} ms", System.currentTimeMillis() - start);
         } catch (Throwable th) {
             LOGGER.error("Start application error", th);
             System.exit(1);

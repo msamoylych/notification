@@ -39,12 +39,12 @@ public class PreloadStorageController extends Storage implements ApplicationCont
 
     @Override
     public void afterPropertiesSet() throws Exception {
+        initTimestamp();
+
         BeanUtils.forEachBeanOfType(applicationContext, PreloadStorage.class, preloadStorage -> {
             storages.put(preloadStorage.code(), preloadStorage);
             preloadStorage.load();
         });
-
-        initTimestamp();
 
         scheduler.scheduleTask(this::check, 300, 60, TimeUnit.SECONDS);
     }

@@ -26,8 +26,8 @@ public class NotificationServer extends SmartLifecycle implements ApplicationCon
     private final List<Sender> senders = new ArrayList<>();
     private final List<Receiver> receivers = new ArrayList<>();
 
-    private ClientFactory clientFactory;
-    private ReceiverStorage receiverStorage;
+    private final ClientFactory clientFactory;
+    private final ReceiverStorage receiverStorage;
 
     private ApplicationContext applicationContext;
 
@@ -43,10 +43,7 @@ public class NotificationServer extends SmartLifecycle implements ApplicationCon
     }
 
     private void startSenders() {
-        BeanUtils.forEachBeanOfType(applicationContext, Sender.class, sender -> {
-            sender.start(clientFactory);
-            senders.add(sender);
-        });
+        BeanUtils.forEachBeanOfType(applicationContext, Sender.class, senders::add);
     }
 
     private void startReceivers() throws StorageException {

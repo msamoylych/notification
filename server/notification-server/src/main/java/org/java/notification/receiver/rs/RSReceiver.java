@@ -27,25 +27,27 @@ public class RSReceiver implements Receiver {
     private final JAXRSServerFactoryBean serverFactoryBean;
 
     public RSReceiver(ReceiverService receiverService) {
+        serverFactoryBean = new JAXRSServerFactoryBean();
+
+        serverFactoryBean.setResourceClasses(RSNotification.class);
         RSNotificationImpl resource = new RSNotificationImpl();
         resource.setReceiverService(receiverService);
-
-        serverFactoryBean = new JAXRSServerFactoryBean();
-        serverFactoryBean.setResourceClasses(RSNotification.class);
         serverFactoryBean.setResourceProvider(RSNotification.class, new SingletonResourceProvider(resource));
+
+        JacksonJaxbJsonProvider jsonProvider = new JacksonJaxbJsonProvider();
+        JAXBElementProvider jaxbProvider = new JAXBElementProvider();
         HashMap<String, Object> marshallerProperties = new HashMap<>();
         marshallerProperties.put(Marshaller.JAXB_FRAGMENT, true);
-        JAXBElementProvider jaxbProvider = new JAXBElementProvider();
         jaxbProvider.setMarshallerProperties(marshallerProperties);
-        serverFactoryBean.setProviders(Arrays.asList(new JacksonJaxbJsonProvider(), jaxbProvider));
+        serverFactoryBean.setProviders(Arrays.asList(jsonProvider, jaxbProvider));
     }
 
     @Override
     public void start(ReceiverSetting setting) {
-        String address = "http://" + setting.host() + ":" + setting.port() + "/" + StringUtils.notNull(setting.path());
+        String address = "http://0.0.0.0:" + setting.port() + "/" + StringUtils.notNull(setting.path());
         serverFactoryBean.setAddress(address);
         serverFactoryBean.create();
-        LOGGER.info("Receiver started on {}", address);
+        LOGGER.info("Started on {}", address);
     }
 
     @Override

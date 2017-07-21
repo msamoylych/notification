@@ -5,8 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -18,18 +16,14 @@ import java.util.concurrent.TimeUnit;
 public final class Scheduler extends SmartLifecycle {
     private static final Logger LOGGER = LoggerFactory.getLogger(Scheduler.class);
 
-    private final Queue<SchedulerTask> queue = new LinkedList<>();
-    private ScheduledThreadPoolExecutor executor;
+    private final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, new SchedulerThreadFactory());
+
+    {
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+    }
 
     @Override
     protected void doStart() {
-        executor = new ScheduledThreadPoolExecutor(1, new SchedulerThreadFactory());
-        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
-        SchedulerTask task;
-        while ((task = queue.poll()) != null) {
-            long initialDelay = task.initialDelay - (System.currentTimeMillis() - task.createMillis);
-            scheduleTask(task.task, initialDelay, task.period, TimeUnit.MILLISECONDS);
-        }
     }
 
     @Override
@@ -45,24 +39,8 @@ public final class Scheduler extends SmartLifecycle {
         return 0;
     }
 
-
     public void scheduleTask(Runnable task, long initialDelay, long period, TimeUnit unit) {
-        if (executor != null) {
-            executor.scheduleAtFixedRate(task, initialDelay, period, unit);
-        } else {
-            SchedulerTask schedulerTask = new SchedulerTask();
-            schedulerTask.task = task;
-            schedulerTask.initialDelay = unit.toMillis(initialDelay);
-            schedulerTask.period = unit.toMillis(period);
-            queue.offer(schedulerTask);
-        }
-    }
-
-    private static class SchedulerTask {
-        long createMillis = System.currentTimeMillis();
-        Runnable task;
-        long initialDelay;
-        long period;
+        executor.scheduleAtFixedRate(task, initialDelay, period, unit);
     }
 
     private static class SchedulerThreadFactory implements ThreadFactory {

@@ -1,8 +1,8 @@
 package org.java.notification.push;
 
+import org.java.notification.storage.ArrayType;
 import org.java.notification.storage.Storage;
 import org.java.notification.storage.StorageException;
-import org.java.notification.storage.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -18,9 +18,9 @@ import java.util.List;
 public class PushStorage extends Storage {
     private static final Logger LOGGER = LoggerFactory.getLogger(PushStorage.class);
 
-    private static final String INSERT_PUSH = "{? = call F_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?)}";
-    private static final String INSERT_PUSHES = "{? = call F_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?)}";
-    private static final String UPDATE_STATE_PNS_ID = "UPDATE PUSH SET state = ?, pns_id = ?, pns_error = ? WHERE id = ?";
+    private static final String INSERT_PUSH = "{call P_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?, ?)}";
+    private static final String INSERT_PUSHES = "{call P_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?, ?)}";
+    private static final String UPDATE_PUSH = "UPDATE PUSH SET state = ?, pns_id = ?, pns_error = ? WHERE id = ?";
 
     public void save(Push<?> push) throws StorageException {
         withCallableStatement(INSERT_PUSH,
@@ -69,14 +69,14 @@ public class PushStorage extends Storage {
                         i++;
                     }
 
-                    st.registerOutParameter(Types.ARRAY, Type.T_NUMBER_20);
-                    st.setArray(Type.T_NUMBER_20, applicationIds);
-                    st.setArray(Type.T_VARCHAR2_256, tokens);
-                    st.setArray(Type.T_VARCHAR2_256, titles);
-                    st.setArray(Type.T_VARCHAR2_4000, bodies);
-                    st.setArray(Type.T_VARCHAR2_16, icons);
-                    st.setArray(Type.T_NUMBER_20, systemIds);
-                    st.setArray(Type.T_VARCHAR2_36, extIds);
+                    st.registerOutParameter(Types.ARRAY, ArrayType.T_NUMBER_20);
+                    st.setArray(ArrayType.T_NUMBER_20, applicationIds);
+                    st.setArray(ArrayType.T_VARCHAR2_256, tokens);
+                    st.setArray(ArrayType.T_VARCHAR2_256, titles);
+                    st.setArray(ArrayType.T_VARCHAR2_4000, bodies);
+                    st.setArray(ArrayType.T_VARCHAR2_16, icons);
+                    st.setArray(ArrayType.T_NUMBER_20, systemIds);
+                    st.setArray(ArrayType.T_VARCHAR2_36, extIds);
                 },
                 st -> {
                     BigDecimal[] ids = (BigDecimal[]) st.getArray();
@@ -91,7 +91,7 @@ public class PushStorage extends Storage {
 
     public void update(Push<?> push) {
         try {
-            withPreparedStatement(UPDATE_STATE_PNS_ID,
+            withPreparedStatement(UPDATE_PUSH,
                     st -> {
                         st.setString(push.state().name());
                         st.setString(push.pnsId());

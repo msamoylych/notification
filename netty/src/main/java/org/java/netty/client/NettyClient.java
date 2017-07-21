@@ -25,9 +25,6 @@ public abstract class NettyClient<M extends Message> implements Client<M> {
     protected volatile Channel channel;
 
     public NettyClient(Netty netty, ClientAdapter<M> clientAdapter) {
-        assert netty.isRunning();
-        assert clientAdapter != null;
-
         adapter = clientAdapter;
         bootstrap = new Bootstrap()
                 .group(netty.client())

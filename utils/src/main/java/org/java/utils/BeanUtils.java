@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 /**
  * Created by msamoylych on 26.05.2017.
  */
-public class BeanUtils {
+public final class BeanUtils {
 
     public static <T> Collection<T> beansOfType(ApplicationContext applicationContext, Class<T> cls) {
         return applicationContext.getBeansOfType(cls).values();

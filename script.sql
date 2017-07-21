@@ -18,7 +18,7 @@ CREATE TABLE CHANGES (
 CREATE UNIQUE INDEX CHANGES_CODE_I
   ON CHANGES (CODE);
 
-CREATE PROCEDURE P_UPDATE_CHANGES(code VARCHAR2) AS
+CREATE PROCEDURE P_CHANGED(code VARCHAR2) AS
   BEGIN
     UPDATE CHANGES
     SET CHANGED = sys_extract_utc(systimestamp)
@@ -29,39 +29,26 @@ CREATE PROCEDURE P_UPDATE_CHANGES(code VARCHAR2) AS
     END IF;
   END;
 
--- RECEIVER
+-- SETTINGS
 
-CREATE TABLE RECEIVER (
-  ID         NUMBER(20)                                      NOT NULL,
-  CREATETIME TIMESTAMP DEFAULT sys_extract_utc(systimestamp) NOT NULL,
-  TYPE       VARCHAR2(10)                                    NOT NULL,
-  HOST       VARCHAR2(32)                                    NOT NULL,
-  PORT       NUMBER(5)                                       NOT NULL,
-  PATH       VARCHAR2(32)                                    NULL
+CREATE TABLE SETTINGS (
+  CODE  VARCHAR2(256) NOT NULL,
+  VALUE VARCHAR2(256) NOT NULL
 );
 
-ALTER TABLE RECEIVER
-  ADD CONSTRAINT RECEIVER_PK PRIMARY KEY (ID)
+ALTER TABLE SETTINGS
+  ADD CONSTRAINT SETTINGS_PK PRIMARY KEY (CODE)
   USING INDEX;
 
-CREATE UNIQUE INDEX RECEIVER_TYPE
-  ON RECEIVER (TYPE);
-
-ALTER TABLE RECEIVER
-  ADD CONSTRAINT RECEIVER_TYPE_CH CHECK (TYPE IN ('WS', 'RS'));
-
-ALTER TABLE RECEIVER
-  ADD CONSTRAINT RECEIVER_PORT_CH CHECK (PORT BETWEEN 0 AND 65536);
-
-CREATE SEQUENCE RECEIVER_SEQ START WITH 1;
-
-CREATE TRIGGER RECEIVER_T
-BEFORE INSERT ON RECEIVER
-FOR EACH ROW
+CREATE PROCEDURE P_SAVE_SETTING(code VARCHAR2, value VARCHAR2) AS
   BEGIN
-    SELECT RECEIVER_SEQ.nextval
-    INTO :new.ID
-    FROM dual;
+    UPDATE SETTINGS
+    SET VALUE = value
+    WHERE CODE = code;
+    IF SQL%ROWCOUNT = 0
+    THEN
+      INSERT INTO SETTINGS (CODE, VALUE) VALUES (code, value);
+    END IF;
   END;
 
 -- SYSTEM
@@ -96,7 +83,7 @@ FOR EACH ROW
 CREATE TRIGGER SYSTEM_CHANGES_T
 AFTER INSERT OR UPDATE OR DELETE ON SYSTEM
   BEGIN
-    P_UPDATE_CHANGES('SYSTEM');
+    P_CHANGED('SYSTEM');
   END;
 
 -- APPLICATION
@@ -141,13 +128,13 @@ FOREIGN KEY (ID) REFERENCES APPLICATION (ID) ON DELETE CASCADE;
 CREATE TRIGGER APPLICATION_CHANGES_T
 AFTER INSERT OR UPDATE OR DELETE ON APPLICATION
   BEGIN
-    P_UPDATE_CHANGES('APPLICATION');
+    P_CHANGED('APPLICATION');
   END;
 
 CREATE TRIGGER APPLICATION_FCM_CHANGES_T
 AFTER INSERT OR UPDATE OR DELETE ON APPLICATION_FCM
   BEGIN
-    P_UPDATE_CHANGES('APPLICATION');
+    P_CHANGED('APPLICATION');
   END;
 
 -- SYSTEM_APPLICATION
@@ -168,7 +155,7 @@ FOREIGN KEY (APPLICATION_ID) REFERENCES APPLICATION (ID) ON DELETE CASCADE;
 CREATE TRIGGER SYSTEM_APPLICATION_CHANGES_T
 AFTER INSERT OR UPDATE OR DELETE ON SYSTEM_APPLICATION
   BEGIN
-    P_UPDATE_CHANGES('APPLICATION');
+    P_CHANGEG('APPLICATION');
   END;
 
 -- PUSH
@@ -214,42 +201,37 @@ FOR EACH ROW
     FROM dual;
   END;
 
-CREATE FUNCTION F_INSERT_PUSH(application_id NUMBER,
-                              token          VARCHAR2,
-                              title          VARCHAR2,
-                              body           VARCHAR2,
-                              icon           VARCHAR2,
-                              system_id      NUMBER,
-                              ext_id         VARCHAR2)
-  RETURN NUMBER
+CREATE PROCEDURE P_INSERT_PUSH(id OUT         NUMBER,
+                               application_id NUMBER,
+                               token          VARCHAR2,
+                               title          VARCHAR2,
+                               body           VARCHAR2,
+                               icon           VARCHAR2,
+                               system_id      NUMBER,
+                               ext_id         VARCHAR2
+)
 AS
-  id NUMBER(20);
   BEGIN
     INSERT INTO PUSH (APPLICATION_ID, TOKEN, TITLE, BODY, ICON, SYSTEM_ID, EXT_ID)
     VALUES (application_id, token, title, body, icon, system_id, ext_id)
     RETURNING ID INTO id;
-
-    RETURN id;
   END;
 
-CREATE FUNCTION F_INSERT_PUSHES(application_id T_NUMBER_20,
-                                token          T_VARCHAR2_256,
-                                title          T_VARCHAR2_256,
-                                body           T_VARCHAR2_4000,
-                                icon           T_VARCHAR2_16,
-                                system_id      T_NUMBER_20,
-                                ext_id         T_VARCHAR2_36)
-  RETURN T_NUMBER_20
+CREATE PROCEDURE P_INSERT_PUSHES(id OUT         T_NUMBER_20,
+                                 application_id T_NUMBER_20,
+                                 token          T_VARCHAR2_256,
+                                 title          T_VARCHAR2_256,
+                                 body           T_VARCHAR2_4000,
+                                 icon           T_VARCHAR2_16,
+                                 system_id      T_NUMBER_20,
+                                 ext_id         T_VARCHAR2_36)
 AS
-  id T_NUMBER_20;
   BEGIN
     id := T_NUMBER_20();
     id.EXTEND(application_id.LAST);
 
     FOR i IN application_id.FIRST .. application_id.LAST
     LOOP
-      id(i) := F_INSERT_PUSH(application_id(i), token(i), title(i), body(i), icon(i), system_id(i), ext_id(i));
+      P_INSERT_PUSH(id(i), application_id(i), token(i), title(i), body(i), icon(i), system_id(i), ext_id(i));
     END LOOP;
-
-    RETURN id;
   END;

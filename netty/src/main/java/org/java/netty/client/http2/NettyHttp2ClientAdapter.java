@@ -5,7 +5,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
 import io.netty.handler.codec.http2.Http2Headers;
 import org.java.notification.Message;
-import org.java.notification.client.http.HttpClientAdapter;
+import org.java.notification.client.http.Http2ClientAdapter;
 import org.java.utils.http.Status;
 
 import static io.netty.handler.codec.http.HttpScheme.HTTPS;
@@ -15,9 +15,9 @@ import static io.netty.handler.codec.http.HttpScheme.HTTPS;
  */
 class NettyHttp2ClientAdapter<M extends Message> {
 
-    private final HttpClientAdapter<M> adapter;
+    private final Http2ClientAdapter<M> adapter;
 
-    NettyHttp2ClientAdapter(HttpClientAdapter<M> adapter) {
+    NettyHttp2ClientAdapter(Http2ClientAdapter<M> adapter) {
         this.adapter = adapter;
     }
 
@@ -55,7 +55,7 @@ class NettyHttp2ClientAdapter<M extends Message> {
         }
     }
 
-    private static class NettyHttp2ClientHeaders implements HttpClientAdapter.Headers {
+    private static class NettyHttp2ClientHeaders implements Http2ClientAdapter.Headers {
         private Http2Headers headers;
 
         private NettyHttp2ClientHeaders(Http2Headers headers) {

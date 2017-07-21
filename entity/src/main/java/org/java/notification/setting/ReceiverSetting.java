@@ -9,8 +9,6 @@ public class ReceiverSetting extends Entity {
 
     private String type;
 
-    private String host;
-
     private Integer port;
 
     private String path;
@@ -21,14 +19,6 @@ public class ReceiverSetting extends Entity {
 
     public void type(String type) {
         this.type = type;
-    }
-
-    public String host() {
-        return host;
-    }
-
-    public void host(String host) {
-        this.host = host;
     }
 
     public Integer port() {

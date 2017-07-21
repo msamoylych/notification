@@ -3,7 +3,7 @@ package org.java.utils;
 /**
  * Created by msamoylych on 12.04.2017.
  */
-public class Json {
+public final class Json {
 
     private static final char START_BRACE = '{';
     private static final char END_BRACE = '}';

@@ -7,26 +7,25 @@ import io.netty.channel.ChannelPromise;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.concurrent.PromiseCombiner;
-import io.netty.util.internal.PlatformDependent;
 import org.java.netty.NettyUtils;
 import org.java.notification.Message;
-
-import java.util.Map;
 
 /**
  * Created by msamoylych on 04.04.2017.
  */
 class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler {
 
+    private final Http2Connection connection;
+    private final Http2Connection.PropertyKey messageKey;
     private final NettyHttp2ClientAdapter<M> adapter;
-    private final Map<Integer, StreamData> streams;
-    private long pingData = 0;
+    private int pingData = 0;
 
-    private NettyHttp2ClientHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings,
-                                    NettyHttp2ClientAdapter<M> adapter) {
+    private NettyHttp2ClientHandler(Http2Connection connection, Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
+                                    Http2Settings initialSettings, NettyHttp2ClientAdapter<M> adapter) {
         super(decoder, encoder, initialSettings);
+        this.connection = connection;
+        this.messageKey = connection.newKey();
         this.adapter = adapter;
-        streams = PlatformDependent.newConcurrentHashMap();
     }
 
     private class NettyHttp2ClientFrameListener extends Http2FrameAdapter {
@@ -38,26 +37,29 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         @Override
         public void onHeadersRead(ChannelHandlerContext ctx, int streamId, Http2Headers headers, int padding, boolean endOfStream) throws Http2Exception {
-            StreamData streamData;
+            Http2Stream stream = connection.stream(streamId);
+            StreamData streamData = stream.getProperty(messageKey);
+
             if (endOfStream) {
-                streamData = streams.remove(streamId);
                 adapter.handleResponse(streamData.message, headers, null);
             } else {
-                streamData = streams.get(streamId);
                 streamData.headers = headers;
             }
         }
 
         @Override
         public int onDataRead(ChannelHandlerContext ctx, int streamId, ByteBuf data, int padding, boolean endOfStream) throws Http2Exception {
-            int bytesProcessed = data.readableBytes() + padding;
+            Http2Stream stream = connection.stream(streamId);
+            StreamData streamData = stream.getProperty(messageKey);
+            ByteBuf response = streamData.response;
+            int dataReadableBytes = data.readableBytes();
+            response.writeBytes(data, data.readerIndex(), dataReadableBytes);
 
             if (endOfStream) {
-                StreamData streamData = streams.remove(streamId);
-                adapter.handleResponse(streamData.message, streamData.headers, NettyUtils.toString(data));
+                adapter.handleResponse(streamData.message, streamData.headers, NettyUtils.toString(response));
             }
 
-            return bytesProcessed;
+            return dataReadableBytes + padding;
         }
 
         @Override
@@ -67,7 +69,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     }
 
     @Override
-    @SuppressWarnings({"unchecked"})
+    @SuppressWarnings("unchecked")
     public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Http2Exception {
         M message = (M) msg;
 
@@ -89,7 +91,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         promise.addListener(future -> {
             if (future.isSuccess()) {
-                streams.put(streamId, new StreamData(message));
+                connection.stream(streamId).setProperty(messageKey, new StreamData(ctx, message));
             } else {
                 adapter.fail(message, future.cause());
             }
@@ -100,7 +102,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof IdleStateEvent) {
             ByteBuf data = ctx.alloc().buffer(8, 8);
-            data.writeLong(pingData++);
+            data.writeInt(pingData++);
             encoder().writePing(ctx, false, data, ctx.newPromise());
         }
 
@@ -116,7 +118,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
         private NettyHttp2ClientAdapter<M> adapter;
 
         Builder() {
-            server(false);
+            connection(new DefaultHttp2Connection(false, 100));
         }
 
         Builder<M> adapter(NettyHttp2ClientAdapter<M> adapter) {
@@ -136,7 +138,7 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
 
         @Override
         protected NettyHttp2ClientHandler<M> build(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder, Http2Settings initialSettings) throws Exception {
-            NettyHttp2ClientHandler<M> handler = new NettyHttp2ClientHandler<>(decoder, encoder, initialSettings, adapter);
+            NettyHttp2ClientHandler<M> handler = new NettyHttp2ClientHandler<>(connection(), decoder, encoder, initialSettings, adapter);
             frameListener(handler.new NettyHttp2ClientFrameListener());
             return handler;
         }
@@ -145,8 +147,10 @@ class NettyHttp2ClientHandler<M extends Message> extends Http2ConnectionHandler 
     private class StreamData {
         private M message;
         private Http2Headers headers;
+        private ByteBuf response;
 
-        private StreamData(M message) {
+        private StreamData(ChannelHandlerContext ctx, M message) {
+            this.response = ctx.alloc().buffer();
             this.message = message;
         }
     }

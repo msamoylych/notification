@@ -24,7 +24,7 @@ public class SystemStorage extends PreloadStorage {
         return CODE;
     }
 
-    public System system(Long id) {
+    public System system(long id) {
         try {
             read.lock();
             return systemsById.get(id);
@@ -57,6 +57,7 @@ public class SystemStorage extends PreloadStorage {
                     system.code(rs.getString());
                     system.name(rs.getString());
                     system.locked(rs.getYNBoolean());
+
                     systemsById.put(system.id(), system);
                     systemsByCode.put(system.code(), system);
                 }

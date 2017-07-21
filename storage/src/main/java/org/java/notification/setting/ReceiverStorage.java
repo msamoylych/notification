@@ -13,7 +13,7 @@ import java.util.List;
 @Repository
 public class ReceiverStorage extends Storage {
 
-    private static final String SELECT = "SELECT id, type, host, port, path FROM RECEIVER";
+    private static final String SELECT = "SELECT id, type, port, path FROM RECEIVER";
 
     public List<ReceiverSetting> getReceivers() throws StorageException {
         return withPreparedStatement(SELECT, rs -> {
@@ -22,7 +22,6 @@ public class ReceiverStorage extends Storage {
                 ReceiverSetting setting = new ReceiverSetting();
                 setting.id(rs.getLong());
                 setting.type(rs.getString());
-                setting.host(rs.getString());
                 setting.port(rs.getInt());
                 setting.path(rs.getString());
                 result.add(setting);

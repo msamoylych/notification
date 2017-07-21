@@ -1,6 +1,7 @@
 package org.java.notification.sender.push.fcm;
 
-import org.java.notification.client.http.HttpClientAdapter;
+import org.java.notification.client.ClientFactory;
+import org.java.notification.client.http.Http2ClientAdapter;
 import org.java.notification.push.Push;
 import org.java.notification.push.PushStorage;
 import org.java.notification.push.State;
@@ -22,7 +23,8 @@ import java.util.regex.Pattern;
  * Created by msamoylych on 27.06.2017.
  */
 @Component
-public class FCMSender extends AbstractSender<Push<FCMApplication>> implements HttpClientAdapter<Push<FCMApplication>> {
+@SuppressWarnings("unused")
+public class FCMSender extends AbstractSender<Push<FCMApplication>> implements Http2ClientAdapter<Push<FCMApplication>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FCMSender.class);
 
     private static final String HOST = "fcm.googleapis.com";
@@ -39,8 +41,8 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
 
     private final PushStorage pushStorage;
 
-    public FCMSender(PushStorage pushStorage) {
-        assert pushStorage != null;
+    public FCMSender(ClientFactory clientFactory, PushStorage pushStorage) {
+        super(clientFactory);
 
         this.pushStorage = pushStorage;
     }
@@ -53,11 +55,6 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
     @Override
     public int port() {
         return PORT;
-    }
-
-    @Override
-    public boolean http2() {
-        return true;
     }
 
     @Override
@@ -78,17 +75,18 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
 
     @Override
     public String content(Push<FCMApplication> push) {
-        return Json.start()
-                .add("to", push.token())
-                .startObject("notification")
-                .add("title", push.title())
-                .add("body", push.body())
-                .add("icon", push.icon())
-                .endObject()
-                .startObject("data")
-                .add("msgId", push.id())
-                .endObject()
-                .end();
+        Json.JsonBuilder json = Json.start().add("to", push.token());
+        if (push.title() != null) {
+            json.startObject("notification")
+                    .add("title", push.title())
+                    .add("body", push.body())
+                    .add("icon", push.icon())
+                    .endObject();
+        }
+        json.startObject("data")
+                .add("msgId", Long.toString(push.id()))
+                .endObject();
+        return json.end();
     }
 
     @Override
@@ -102,8 +100,8 @@ public class FCMSender extends AbstractSender<Push<FCMApplication>> implements H
                         push.state(State.SENT);
                         push.pnsId(messageId);
                     } else {
-                        String error = matcher.group(ERROR);
                         push.state(State.FAILED);
+                        String error = matcher.group(ERROR);
                         push.pnsError(error);
                         LOGGER.error("{} - pns error: {}", push, error);
                     }
