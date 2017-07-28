@@ -63,7 +63,7 @@ class NettyHttpServerAdapter {
                     ChunkedInput chunkedInput = new HttpChunkedInput(new ChunkedStream(is, 8192));
                     ctx.writeAndFlush(chunkedInput);
                 } else {
-                    ByteBuf content = ctx.alloc().buffer(length);
+                    ByteBuf content = ctx.alloc().buffer(length, length);
                     content.writeBytes(is, length);
                     IOUtils.closeQuietly(is);
                     FullHttpResponse res = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, response.status(),

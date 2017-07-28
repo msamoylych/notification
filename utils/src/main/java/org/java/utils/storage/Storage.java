@@ -17,11 +17,19 @@ import java.util.Objects;
 public abstract class Storage {
     private static final Logger LOGGER = LoggerFactory.getLogger(Storage.class);
 
-    private static final String FACTORY_CLASS = "oracle.jdbc.pool.OracleDataSource";
+    private static final String CONNECTION_FACTORY_CLASS = "oracle.jdbc.pool.OracleDataSource";
 
+    private static final String CONNECTION_POOL_NAME = "connectionPoolName";
     private static final String URL = "url";
     private static final String USER = "user";
     private static final String PASSWORD = "password";
+    private static final String INITIAL_POOL_SIZE = "initialPoolSize";
+    private static final String MIN_POOL_SIZE = "minPoolSize";
+    private static final String MAX_POOL_SIZE = "maxPoolSize";
+    private static final String CONNECTION_WAIT_TIMEOUT = "connectionWaitTimeout";
+    private static final String INACTIVE_CONNECTION_TIMEOUT = "inactiveConnectionTimeout";
+    private static final String TIME_TO_LIVE_CONNECTION_TIMEOUT = "timeToLiveConnectionTimeout";
+    private static final String ABANDONED_CONNECTION_TIMEOUT = "abandonedConnectionTimeout";
 
     private static final DataSource DATA_SOURCE;
 
@@ -29,11 +37,22 @@ public abstract class Storage {
         try {
             LOGGER.info("Initialize data source...");
             PoolDataSource dataSource = PoolDataSourceFactory.getPoolDataSource();
-            dataSource.setConnectionFactoryClassName(FACTORY_CLASS);
+            dataSource.setConnectionFactoryClassName(CONNECTION_FACTORY_CLASS);
+
+            dataSource.setConnectionPoolName(PropertiesProvider.get(CONNECTION_POOL_NAME));
 
             dataSource.setURL(PropertiesProvider.get(URL));
             dataSource.setUser(PropertiesProvider.get(USER));
             dataSource.setPassword(PropertiesProvider.get(PASSWORD));
+
+            dataSource.setInitialPoolSize(PropertiesProvider.getInteger(INITIAL_POOL_SIZE, 0));
+            dataSource.setMinPoolSize(PropertiesProvider.getInteger(MIN_POOL_SIZE, 0));
+            dataSource.setMinPoolSize(PropertiesProvider.getInteger(MAX_POOL_SIZE, 100));
+
+            dataSource.setConnectionWaitTimeout(PropertiesProvider.getInteger(CONNECTION_WAIT_TIMEOUT, 3));
+            dataSource.setInactiveConnectionTimeout(PropertiesProvider.getInteger(INACTIVE_CONNECTION_TIMEOUT, 0));
+            dataSource.setTimeToLiveConnectionTimeout(PropertiesProvider.getInteger(TIME_TO_LIVE_CONNECTION_TIMEOUT, 0));
+            dataSource.setAbandonedConnectionTimeout(PropertiesProvider.getInteger(ABANDONED_CONNECTION_TIMEOUT, 0));
 
             try (Connection connection = dataSource.getConnection()) {
                 DatabaseMetaData metaData = connection.getMetaData();
