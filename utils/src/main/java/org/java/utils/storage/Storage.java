@@ -120,7 +120,7 @@ public abstract class Storage {
     }
 
     @FunctionalInterface
-    protected interface Consumer<T extends StatementWrapper<?>> {
+    protected interface Consumer<T extends PreparedStatementWrapper<?>> {
         void accept(T st) throws SQLException;
     }
 
