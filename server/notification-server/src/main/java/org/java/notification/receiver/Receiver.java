@@ -1,6 +1,5 @@
 package org.java.notification.receiver;
 
-import org.java.notification.setting.ReceiverSetting;
 import org.springframework.stereotype.Service;
 
 /**
@@ -8,8 +7,4 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public interface Receiver {
-
-    void start(ReceiverSetting setting);
-
-    void stop();
 }

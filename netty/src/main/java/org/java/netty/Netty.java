@@ -7,6 +7,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.concurrent.EventExecutorGroup;
 import io.netty.util.concurrent.Future;
 import org.java.utils.lifecycle.SmartLifecycle;
+import org.java.utils.settings.SettingsRegister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,13 +18,18 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 04.04.2017.
  */
 @Component
-public class Netty extends SmartLifecycle {
+public class Netty extends SmartLifecycle implements SettingsRegister {
     private static final Logger LOGGER = LoggerFactory.getLogger(Netty.class);
 
-    private EventLoopGroup acceptor = new NioEventLoopGroup(0, new ThreadFactory("acceptor"));
-    private EventLoopGroup server = new NioEventLoopGroup(0, new ThreadFactory("server"));
-    private EventLoopGroup client = new NioEventLoopGroup(0, new ThreadFactory("client"));
-    private EventExecutorGroup executor = new DefaultEventExecutorGroup(16, new ThreadFactory("executor"));
+    private final int acceptorThreadCount = setting("ACCEPTOR_THREAD_COUNT", "Количество потоков для обработки входящих соединений", 0);
+    private final int serverThreadCount = setting("SERVER_THREAD_COUNT", "Количество потоков для обработки входящих соединений", 0);
+    private final int clientThreadCount = setting("CLIENT_THREAD_COUNT", "Количество потоков для обработки входящих соединений", 0);
+    private final int executorThreadCount = setting("EXECUTOR_THREAD_COUNT", "Количество потоков для обработки входящих соединений", 16);
+
+    private final EventLoopGroup acceptor = new NioEventLoopGroup(acceptorThreadCount, new ThreadFactory("acceptor"));
+    private final EventLoopGroup server = new NioEventLoopGroup(serverThreadCount, new ThreadFactory("server"));
+    private final EventLoopGroup client = new NioEventLoopGroup(clientThreadCount, new ThreadFactory("client"));
+    private final EventExecutorGroup executor = new DefaultEventExecutorGroup(executorThreadCount, new ThreadFactory("executor"));
 
     @Override
     protected void doStart() throws Exception {

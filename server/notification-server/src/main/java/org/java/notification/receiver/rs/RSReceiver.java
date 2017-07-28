@@ -6,8 +6,8 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.jaxrs.provider.JAXBElementProvider;
 import org.java.notification.receiver.Receiver;
 import org.java.notification.receiver.ReceiverService;
-import org.java.notification.setting.ReceiverSetting;
-import org.java.utils.StringUtils;
+import org.java.utils.lifecycle.SmartLifecycle;
+import org.java.utils.settings.SettingsRegister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -19,10 +19,14 @@ import java.util.HashMap;
 /**
  * Created by msamoylych on 12.07.2017.
  */
-@Component("RS")
+@Component
 @SuppressWarnings("unused")
-public class RSReceiver implements Receiver {
+public class RSReceiver extends SmartLifecycle implements Receiver, SettingsRegister {
     private static final Logger LOGGER = LoggerFactory.getLogger(RSReceiver.class);
+
+    private final boolean enabled = setting("RS_RECEIVER_ENABLED", "Запуск", false);
+    private final int port = setting("RS_RECEIVER_PORT", "Порт", 8787);
+    private final String path = setting("RS_RECEIVER_PATH", "Путь", "");
 
     private final JAXRSServerFactoryBean serverFactoryBean;
 
@@ -43,15 +47,25 @@ public class RSReceiver implements Receiver {
     }
 
     @Override
-    public void start(ReceiverSetting setting) {
-        String address = "http://0.0.0.0:" + setting.port() + "/" + StringUtils.notNull(setting.path());
-        serverFactoryBean.setAddress(address);
-        serverFactoryBean.create();
-        LOGGER.info("Started on {}", address);
+    protected boolean isEnabled() {
+        return enabled;
     }
 
     @Override
-    public void stop() {
+    protected void doStart() throws Exception {
+        String address = "http://0.0.0.0:" + port + "/" + path;
+        serverFactoryBean.setAddress(address);
+        serverFactoryBean.create();
+        LOGGER.info("Listening on {}", address);
+    }
+
+    @Override
+    protected void doStop() throws Exception {
         serverFactoryBean.getServer().stop();
+    }
+
+    @Override
+    public int getPhase() {
+        return 2;
     }
 }

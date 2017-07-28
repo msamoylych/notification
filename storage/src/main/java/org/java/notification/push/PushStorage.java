@@ -1,8 +1,7 @@
 package org.java.notification.push;
 
-import org.java.notification.storage.ArrayType;
-import org.java.notification.storage.Storage;
-import org.java.notification.storage.StorageException;
+import org.java.utils.storage.Storage;
+import org.java.utils.storage.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -20,19 +19,25 @@ public class PushStorage extends Storage {
 
     private static final String INSERT_PUSH = "{call P_INSERT_PUSH(?, ?, ?, ?, ?, ?, ?, ?)}";
     private static final String INSERT_PUSHES = "{call P_INSERT_PUSHES(?, ?, ?, ?, ?, ?, ?, ?)}";
-    private static final String UPDATE_PUSH = "UPDATE PUSH SET state = ?, pns_id = ?, pns_error = ? WHERE id = ?";
+    private static final String UPDATE = "UPDATE PUSH SET state = ?, pns_id = ?, pns_error = ? WHERE id = ?";
+
+    public static final String T_NUMBER_20 = "T_NUMBER_20";
+    public static final String T_VARCHAR2_16 = "T_VARCHAR2_16";
+    public static final String T_VARCHAR2_36 = "T_VARCHAR2_36";
+    public static final String T_VARCHAR2_256 = "T_VARCHAR2_256";
+    public static final String T_VARCHAR2_4000 = "T_VARCHAR2_4000";
 
     public void save(Push<?> push) throws StorageException {
         withCallableStatement(INSERT_PUSH,
                 st -> {
                     st.registerOutParameter(Types.NUMERIC);
-                    st.setLong(push.application().id());
-                    st.setString(push.token());
-                    st.setString(push.title());
-                    st.setString(push.body());
-                    st.setString(push.icon());
-                    st.setLong(push.system().id());
-                    st.setString(push.extId());
+                    st.set(push.application());
+                    st.set(push.token());
+                    st.set(push.title());
+                    st.set(push.body());
+                    st.set(push.icon());
+                    st.set(push.system());
+                    st.set(push.extId());
                 },
                 st -> push.id(st.getLong()));
     }
@@ -69,14 +74,14 @@ public class PushStorage extends Storage {
                         i++;
                     }
 
-                    st.registerOutParameter(Types.ARRAY, ArrayType.T_NUMBER_20);
-                    st.setArray(ArrayType.T_NUMBER_20, applicationIds);
-                    st.setArray(ArrayType.T_VARCHAR2_256, tokens);
-                    st.setArray(ArrayType.T_VARCHAR2_256, titles);
-                    st.setArray(ArrayType.T_VARCHAR2_4000, bodies);
-                    st.setArray(ArrayType.T_VARCHAR2_16, icons);
-                    st.setArray(ArrayType.T_NUMBER_20, systemIds);
-                    st.setArray(ArrayType.T_VARCHAR2_36, extIds);
+                    st.registerOutParameter(Types.ARRAY, T_NUMBER_20);
+                    st.set(T_NUMBER_20, applicationIds);
+                    st.set(T_VARCHAR2_256, tokens);
+                    st.set(T_VARCHAR2_256, titles);
+                    st.set(T_VARCHAR2_4000, bodies);
+                    st.set(T_VARCHAR2_16, icons);
+                    st.set(T_NUMBER_20, systemIds);
+                    st.set(T_VARCHAR2_36, extIds);
                 },
                 st -> {
                     BigDecimal[] ids = (BigDecimal[]) st.getArray();
@@ -91,12 +96,12 @@ public class PushStorage extends Storage {
 
     public void update(Push<?> push) {
         try {
-            withPreparedStatement(UPDATE_PUSH,
-                    st -> {
-                        st.setString(push.state().name());
-                        st.setString(push.pnsId());
-                        st.setString(push.pnsError());
-                        st.setLong(push.id());
+            withPreparedStatement(UPDATE,
+                    (PreparedStatementWrapper<?> st) -> {
+                        st.set(push.state());
+                        st.set(push.pnsId());
+                        st.set(push.pnsError());
+                        st.set(push.id());
                     });
         } catch (StorageException ex) {
             LOGGER.error("{} - update failed", push, ex);

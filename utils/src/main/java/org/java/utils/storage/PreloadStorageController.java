@@ -1,4 +1,4 @@
-package org.java.notification.storage;
+package org.java.utils.storage;
 
 import org.java.utils.BeanUtils;
 import org.java.utils.Scheduler;
@@ -11,7 +11,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Created by msamoylych on 09.06.2017.
  */
 @Component
+@SuppressWarnings("unused")
 public class PreloadStorageController extends Storage implements ApplicationContextAware, InitializingBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(PreloadStorageController.class);
 
@@ -28,7 +28,7 @@ public class PreloadStorageController extends Storage implements ApplicationCont
 
     private final Scheduler scheduler;
 
-    private Map<String, PreloadStorage> storages = new HashMap<>();
+    private final Map<String, PreloadStorage> storages = new HashMap<>();
     private Timestamp timestamp;
 
     private ApplicationContext applicationContext;
@@ -51,7 +51,7 @@ public class PreloadStorageController extends Storage implements ApplicationCont
 
     private void check() {
         try {
-            withPreparedStatement(CHECK, st -> st.setTimestamp(timestamp), rs -> {
+            withPreparedStatement(CHECK, st -> st.set(timestamp), rs -> {
                 while (rs.next()) {
                     storages.get(rs.getString()).load();
                     Timestamp t = rs.getTimestamp();
@@ -62,18 +62,20 @@ public class PreloadStorageController extends Storage implements ApplicationCont
                 return null;
             });
         } catch (StorageException ex) {
-            LOGGER.error("Check changes exception", ex);
+            LOGGER.error("Check changes failed", ex);
         }
     }
 
-    private void initTimestamp() {
-        try {
-            timestamp = withStatement(SELECT_DATE,
-                    rs -> rs.next() ? rs.getTimestamp() : Timestamp.from(Instant.now())
-            );
-        } catch (StorageException ex) {
-            LOGGER.error("Timestamp init exception", ex);
-        }
+    private void initTimestamp() throws StorageException {
+        timestamp = withStatement(SELECT_DATE,
+                rs -> {
+                    if (rs.next()) {
+                        return rs.getTimestamp();
+                    } else {
+                        throw new IllegalStateException("Can't init timestamp");
+                    }
+                }
+        );
     }
 
     @Override

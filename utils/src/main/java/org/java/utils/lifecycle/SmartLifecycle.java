@@ -16,12 +16,11 @@ public abstract class SmartLifecycle implements org.springframework.context.Smar
     @Override
     public void start() {
         synchronized (lifecycleMonitor) {
-            if (!running) {
+            if (!running && isEnabled()) {
                 try {
                     LOGGER.info("{} starting...", name);
                     doStart();
                     running = true;
-                    LOGGER.info("{} started", name);
                 } catch (Throwable th) {
                     throw new LifecycleException("Start " + name + " failed", th);
                 }
@@ -47,7 +46,6 @@ public abstract class SmartLifecycle implements org.springframework.context.Smar
                     LOGGER.info("{} stopping...", name);
                     doStop();
                     running = false;
-                    LOGGER.info("{} stopped", name);
                 } catch (Throwable th) {
                     throw new LifecycleException("Stop " + name + " failed", th);
                 }
@@ -66,6 +64,10 @@ public abstract class SmartLifecycle implements org.springframework.context.Smar
 
     @Override
     public boolean isAutoStartup() {
+        return true;
+    }
+
+    protected boolean isEnabled() {
         return true;
     }
 }

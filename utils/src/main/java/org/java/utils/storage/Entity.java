@@ -1,4 +1,4 @@
-package org.java.notification;
+package org.java.utils.storage;
 
 /**
  * Created by msamoylych on 04.04.2017.
@@ -11,7 +11,7 @@ public class Entity {
         return id;
     }
 
-    public void id(Long id) {
+    public void id(long id) {
         this.id = id;
     }
 

@@ -1,4 +1,4 @@
-package org.java.notification.storage;
+package org.java.utils.storage;
 
 import java.sql.SQLIntegrityConstraintViolationException;
 

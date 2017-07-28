@@ -1,6 +1,6 @@
 package org.java.notification.user;
 
-import org.java.notification.Entity;
+import org.java.utils.storage.Entity;
 
 /**
  * Created by msamoylych on 25.04.2017.

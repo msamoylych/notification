@@ -1,7 +1,7 @@
 package org.java.notification.user;
 
-import org.java.notification.storage.PreloadStorage;
-import org.java.notification.storage.StorageException;
+import org.java.utils.storage.PreloadStorage;
+import org.java.utils.storage.StorageException;
 import org.springframework.stereotype.Repository;
 
 import java.util.HashMap;
@@ -44,27 +44,27 @@ public class SystemStorage extends PreloadStorage {
 
     @Override
     protected void doLoad() throws StorageException {
-        withPreparedStatement(SELECT, rs -> {
-            try {
-                write.lock();
+        withPreparedStatement(SELECT,
+                (ResultSetWrapper rs) -> {
+                    try {
+                        write.lock();
 
-                systemsById.clear();
-                systemsByCode.clear();
+                        systemsById.clear();
+                        systemsByCode.clear();
 
-                while (rs.next()) {
-                    System system = new System();
-                    system.id(rs.getLong());
-                    system.code(rs.getString());
-                    system.name(rs.getString());
-                    system.locked(rs.getYNBoolean());
+                        while (rs.next()) {
+                            System system = new System();
+                            system.id(rs.getLong());
+                            system.code(rs.getString());
+                            system.name(rs.getString());
+                            system.locked(rs.getYNBoolean());
 
-                    systemsById.put(system.id(), system);
-                    systemsByCode.put(system.code(), system);
-                }
-            } finally {
-                write.unlock();
-            }
-            return null;
-        });
+                            systemsById.put(system.id(), system);
+                            systemsByCode.put(system.code(), system);
+                        }
+                    } finally {
+                        write.unlock();
+                    }
+                });
     }
 }

@@ -17,14 +17,13 @@ public final class Main {
 
     public static void main(String[] args) {
         try {
-            LOGGER.info("Application starting...");
             long start = System.currentTimeMillis();
-            Settings.init();
+            LOGGER.info("Application starting...");
             context = new AnnotationConfigApplicationContext(BASE_PACKAGE);
             Runtime.getRuntime().addShutdownHook(new ShutdownHook());
             LOGGER.info("Application started in {} ms", System.currentTimeMillis() - start);
         } catch (Throwable th) {
-            LOGGER.error("Start application error", th);
+            LOGGER.error("Start application failed", th);
             System.exit(1);
         }
     }
@@ -37,8 +36,9 @@ public final class Main {
 
         @Override
         public void run() {
-            LOGGER.info("Stop application");
+            LOGGER.info("Shutdown performed...");
             context.close();
+            LOGGER.info("Shutdown complete");
         }
     }
 }

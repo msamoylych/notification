@@ -1,7 +1,7 @@
 package org.java.notification.push.application;
 
-import org.java.notification.Entity;
 import org.java.notification.push.PNS;
+import org.java.utils.storage.Entity;
 
 /**
  * Created by msamoylych on 14.04.2017.

@@ -6,7 +6,7 @@ import org.java.notification.push.Push;
 import org.java.notification.push.PushStorage;
 import org.java.notification.push.State;
 import org.java.notification.push.application.FCMApplication;
-import org.java.notification.sender.AbstractSender;
+import org.java.notification.sender.BaseSender;
 import org.java.utils.Json;
 import org.java.utils.http.ContentType;
 import org.java.utils.http.Header;
@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
  */
 @Component
 @SuppressWarnings("unused")
-public class FCMSender extends AbstractSender<Push<FCMApplication>> implements Http2ClientAdapter<Push<FCMApplication>> {
+public class FCMSender extends BaseSender<Push<FCMApplication>> implements Http2ClientAdapter<Push<FCMApplication>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FCMSender.class);
 
     private static final String HOST = "fcm.googleapis.com";

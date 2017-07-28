@@ -2,12 +2,12 @@ package org.java.notification.admin;
 
 import org.java.notification.server.http.HttpRequest;
 import org.java.notification.server.http.HttpResponse;
-import org.java.notification.storage.StorageException;
 import org.java.notification.user.WebUser;
 import org.java.notification.user.WebUserStorage;
 import org.java.utils.HashUtils;
 import org.java.utils.Json;
 import org.java.utils.StringUtils;
+import org.java.utils.storage.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

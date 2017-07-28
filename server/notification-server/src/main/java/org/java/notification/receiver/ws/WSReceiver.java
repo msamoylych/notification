@@ -2,8 +2,8 @@ package org.java.notification.receiver.ws;
 
 import org.java.notification.receiver.Receiver;
 import org.java.notification.receiver.ReceiverService;
-import org.java.notification.setting.ReceiverSetting;
-import org.java.utils.StringUtils;
+import org.java.utils.lifecycle.SmartLifecycle;
+import org.java.utils.settings.SettingsRegister;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -13,10 +13,14 @@ import javax.xml.ws.Endpoint;
 /**
  * Created by msamoylych on 24.05.2017.
  */
-@Component("WS")
+@Component
 @SuppressWarnings("unused")
-public class WSReceiver implements Receiver {
+public class WSReceiver extends SmartLifecycle implements Receiver, SettingsRegister {
     private static final Logger LOGGER = LoggerFactory.getLogger(WSReceiver.class);
+
+    private final boolean enabled = setting("WS_RECEIVER_ENABLED", "Запуск", false);
+    private final int port = setting("WS_RECEIVER_PORT", "Порт", 8787);
+    private final String path = setting("WS_RECEIVER_PATH", "Путь", "");
 
     private final Endpoint endpoint;
 
@@ -27,14 +31,24 @@ public class WSReceiver implements Receiver {
     }
 
     @Override
-    public void start(ReceiverSetting setting) {
-        String address = "http://0.0.0.0:" + setting.port() + "/" + StringUtils.notNull(setting.path());
-        endpoint.publish(address);
-        LOGGER.info("Started on {}", address);
+    protected boolean isEnabled() {
+        return enabled;
     }
 
     @Override
-    public void stop() {
+    protected void doStart() throws Exception {
+        String address = "http://0.0.0.0:" + port + "/" + path;
+        endpoint.publish(address);
+        LOGGER.info("Listening on {}", address);
+    }
+
+    @Override
+    protected void doStop() throws Exception {
         endpoint.stop();
+    }
+
+    @Override
+    public int getPhase() {
+        return 2;
     }
 }

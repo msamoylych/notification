@@ -1,6 +1,6 @@
 package org.java.notification.push;
 
-import org.java.notification.Entity;
+import org.java.utils.storage.Entity;
 
 /**
  * Created by msamoylych on 14.04.2017.

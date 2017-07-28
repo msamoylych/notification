@@ -1,7 +1,7 @@
 package org.java.notification.user;
 
-import org.java.notification.storage.Storage;
-import org.java.notification.storage.StorageException;
+import org.java.utils.storage.Storage;
+import org.java.utils.storage.StorageException;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -15,7 +15,7 @@ public class WebUserStorage extends Storage {
 
     public WebUser findUser(String login) throws StorageException {
         return withPreparedStatement(SELECT_BY_LOGIN,
-                st -> st.setString(login),
+                st -> st.set(login),
                 rs -> {
                     WebUser webUser = new WebUser();
                     webUser.id(rs.getLong());

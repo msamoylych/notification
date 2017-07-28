@@ -1,8 +1,8 @@
 package org.java.notification.push;
 
 import org.java.notification.push.application.*;
-import org.java.notification.storage.PreloadStorage;
-import org.java.notification.storage.StorageException;
+import org.java.utils.storage.PreloadStorage;
+import org.java.utils.storage.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -18,11 +18,11 @@ public class ApplicationStorage extends PreloadStorage {
 
     private static final String CODE = "APPLICATION";
     private static final String SELECT =
-            "SELECT s.id, a.id, a.pns, a.package_name, an.server_key " +
+            "SELECT s.id, a.id, a.pns, a.package_name, fcm.server_key " +
                     "FROM SYSTEM_APPLICATION sa " +
                     "LEFT JOIN SYSTEM s ON s.id = sa.system_id " +
                     "LEFT JOIN APPLICATION a ON a.id = sa.application_id " +
-                    "RIGHT JOIN APPLICATION_FCM an ON an.id = a.id";
+                    "RIGHT JOIN APPLICATION_FCM fcm ON fcm.id = a.id";
 
     private final Map<Long, Application> applicationsById = new HashMap<>();
 
